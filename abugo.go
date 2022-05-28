@@ -32,7 +32,7 @@ import (
 )
 
 func get_config_int64(key string,invalval int64) int64{
-	val:=viper.GetInt64(key)
+	val := viper.GetInt64(key)
 	if val == invalval{
 		err:= fmt.Sprint("read config error:",key)
 		logs.Error(err)
@@ -146,7 +146,7 @@ func Init(){
 	viper.AddConfigPath("./config")
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	err:=viper.ReadInConfig()
+	err := viper.ReadInConfig()
 	if err != nil {
 		logs.Error(err)
 		return
@@ -316,7 +316,6 @@ func (ctx * AbuHttpContent) Put(key string, value interface{}){
 	ctx.gin.Keys[HTTP_SAVE_DATA_KEY].(map[string]interface{})[key] = value
 }
 
-
 func (ctx * AbuHttpContent) RespOK(objects... interface{}) {
 	resp := new(HttpResponse)
 	resp.Code = HTTP_RESPONSE_CODE_OK
@@ -325,9 +324,11 @@ func (ctx * AbuHttpContent) RespOK(objects... interface{}) {
 		ctx.Put("",objects[0])
 	}
 	resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
+	if resp.Data == nil{
+		resp.Data = make(map[string]interface{})
+	}
 	ctx.gin.JSON(http.StatusOK, resp)
 }
-
 
 func (ctx * AbuHttpContent) RespErr(errcode int,errmsg string) {
 	resp := new(HttpResponse)
