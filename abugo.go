@@ -35,6 +35,8 @@ import (
 	"sync"
 	"time"
 
+	mrand "math/rand"
+
 	"github.com/beego/beego/logs"
 	"github.com/garyburd/redigo/redis"
 	"github.com/gin-gonic/gin"
@@ -150,6 +152,7 @@ func Run(){
 //abugo初始化
 /////////////////////////////////////////////////////////////////////////////////
 func Init(){
+	mrand.Seed(time.Now().Unix())
 	gin.SetMode(gin.ReleaseMode)
 	logs.EnableFuncCallDepth(true)
 	logs.SetLogFuncCallDepth(3)
