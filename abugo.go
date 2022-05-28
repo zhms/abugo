@@ -13,12 +13,25 @@ package abugo
 	go get github.com/imroc/req
 */
 import (
+	"bytes"
+	"crypto"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/md5"
+	crand "crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"database/sql"
+	"encoding/asn1"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -840,4 +853,189 @@ func (c *AbuWebsocket) Connect(host string,callback AbuWsCallback) {
 			}
 		}
 	}()
+}
+
+func RsaSign(data interface{},privatekey string) string{
+	privatekey = strings.Replace(privatekey,"-----BEGIN PRIVATE KEY-----","",-1)
+	privatekey = strings.Replace(privatekey,"-----END PRIVATE KEY-----","",-1)
+	privatekey = strings.Replace(privatekey,"-----BEGIN RSA PRIVATE KEY-----","",-1)
+	privatekey = strings.Replace(privatekey,"-----END RSA PRIVATE KEY-----","",-1)
+	jbytes,_ := json.Marshal(&data)
+	jdata := make(map[string]interface{})
+	erra := json.Unmarshal(jbytes,&jdata)
+	if erra != nil{
+		logs.Error(erra)
+		return ""
+	}
+	keys := []string{}
+	for k := range jdata {
+   	 	keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+	signstr := ""
+	for i := 0; i < len(keys); i++ {
+		if strings.ToLower(keys[i]) == "sign" { continue }
+		if reflect.TypeOf(jdata[keys[i]]).Name() == "" {
+			d := jdata[keys[i]].([]interface{})
+			for j := 0; j < len(d); j++ {
+				signstr += fmt.Sprint(d[j])
+			}
+		} else{
+			signstr += fmt.Sprint(jdata[keys[i]])
+		}
+
+	}
+	fmt.Println(signstr)
+	privatekeybase64,errb := base64.StdEncoding.DecodeString(privatekey)
+	if errb != nil{
+		logs.Error(errb)
+		return ""
+	}
+	privatekeyx509,errc := x509.ParsePKCS8PrivateKey([]byte(privatekeybase64))
+	if errc != nil{
+		logs.Error(errc)
+		return ""
+	}
+	hashmd5 := md5.Sum([]byte(signstr))
+	hashed := hashmd5[:]
+	sign,errd := rsa.SignPKCS1v15(crand.Reader,privatekeyx509.(*rsa.PrivateKey),crypto.MD5,hashed)
+	if errd != nil{
+		logs.Error(errd)
+		return ""
+	}
+	return 	base64.StdEncoding.EncodeToString(sign)
+}
+
+func RsaVerify(data interface{},signedstr string,publickey string) bool{
+	publickey = strings.Replace(publickey,"-----BEGIN PUBLIC KEY-----","",-1)
+	publickey = strings.Replace(publickey,"-----END PUBLIC KEY-----","",-1)
+	publickey = strings.Replace(publickey,"-----BEGIN RSA PUBLIC KEY-----","",-1)
+	publickey = strings.Replace(publickey,"-----END RSA PUBLIC KEY-----","",-1)
+	jbytes,_ := json.Marshal(&data)
+	jdata := make(map[string]interface{})
+	erra := json.Unmarshal(jbytes,&jdata)
+	if erra != nil{
+		logs.Error(erra)
+		return false
+	}
+	keys := []string{}
+	for k := range jdata {
+   	 	keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+	signstr := ""
+	for i := 0; i < len(keys); i++ {
+		if strings.ToLower(keys[i]) == "sign" { continue }
+		if reflect.TypeOf(jdata[keys[i]]).Name() == "" {
+			d := jdata[keys[i]].([]interface{})
+			for j := 0; j < len(d); j++ {
+				signstr += fmt.Sprint(d[j])
+			}
+		} else{
+			signstr += fmt.Sprint(jdata[keys[i]])
+		}
+
+	}
+	publickeybase64,errb := base64.StdEncoding.DecodeString(publickey)
+	if errb != nil{
+		logs.Error(errb)
+		return false
+	}
+	publickeyx509,errc := x509.ParsePKIXPublicKey([]byte(publickeybase64))
+	if errc != nil{
+		logs.Error(errc)
+		return false
+	}
+	hash := md5.New()
+	hash.Write([]byte(signstr))
+	signdata,_ := base64.StdEncoding.DecodeString(signedstr)
+	errd := rsa.VerifyPKCS1v15(publickeyx509.(*rsa.PublicKey),crypto.MD5,hash.Sum(nil),signdata)
+	return 	errd == nil
+}
+
+
+
+//补码
+func aesPKCS7Padding(ciphertext []byte, blocksize int) []byte {
+    padding := blocksize - len(ciphertext)%blocksize
+    padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+    return append(ciphertext, padtext...)
+}
+
+//去码
+func aesPKCS7UnPadding(origData []byte) []byte {
+    length := len(origData)
+    unpadding := int(origData[length-1])
+    return origData[:(length - unpadding)]
+}
+
+func AesEncrypt(orig string, key string) string {
+    origData := []byte(orig)
+    k := []byte(key)
+    block, erra := aes.NewCipher(k)
+	if erra != nil {
+		logs.Error(erra)
+		return ""
+	}
+    blockSize := block.BlockSize()
+    origData = aesPKCS7Padding(origData, blockSize)
+    blockMode := cipher.NewCBCEncrypter(block, k[:blockSize])
+    cryted := make([]byte, len(origData))
+    blockMode.CryptBlocks(cryted, origData)
+    return base64.StdEncoding.EncodeToString(cryted)
+}
+
+func AesDecrypt(cryted string, key string) string {
+    crytedByte, _ := base64.StdEncoding.DecodeString(cryted)
+    k := []byte(key)
+    block, _ := aes.NewCipher(k)
+    blockSize := block.BlockSize()
+    blockMode := cipher.NewCBCDecrypter(block, k[:blockSize])
+    orig := make([]byte, len(crytedByte))
+    blockMode.CryptBlocks(orig, crytedByte)
+    orig = aesPKCS7UnPadding(orig)
+    return string(orig)
+}
+
+type AbuRsaKey struct{
+	Public string
+	Private string
+}
+
+type abuPKCS8Key struct {
+  Version             int
+  PrivateKeyAlgorithm []asn1.ObjectIdentifier
+  PrivateKey          []byte
+}
+
+func abuMarshalPKCS8PrivateKey(key *rsa.PrivateKey) ([]byte, error) {
+  var pkey abuPKCS8Key
+  pkey.Version = 0
+  pkey.PrivateKeyAlgorithm = make([]asn1.ObjectIdentifier, 1)
+  pkey.PrivateKeyAlgorithm[0] = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}
+  pkey.PrivateKey = x509.MarshalPKCS1PrivateKey(key)
+  return asn1.Marshal(pkey)
+}
+
+func NewRsaKey() *AbuRsaKey {
+	key := &AbuRsaKey{}
+	privateKey, _ := rsa.GenerateKey(crand.Reader, 2048)
+	bytes, _ := abuMarshalPKCS8PrivateKey(privateKey)
+	privateblock := &pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: bytes,
+	}
+	key.Private = string(pem.EncodeToMemory(privateblock))
+	PublicKey := &privateKey.PublicKey
+	pkixPublicKey, _ := x509.MarshalPKIXPublicKey(PublicKey)
+	publicblock := &pem.Block{
+		Type:"PUBLIC KEY",
+		Bytes:pkixPublicKey,
+	}
+	key.Public = string(pem.EncodeToMemory(publicblock))
+	return key
 }
