@@ -987,16 +987,11 @@ func RsaVerify(data interface{},signedstr string,publickey string) bool{
 	return 	errd == nil
 }
 
-
-
-//补码
 func aesPKCS7Padding(ciphertext []byte, blocksize int) []byte {
     padding := blocksize - len(ciphertext)%blocksize
     padtext := bytes.Repeat([]byte{byte(padding)}, padding)
     return append(ciphertext, padtext...)
 }
-
-//去码
 func aesPKCS7UnPadding(origData []byte) []byte {
     length := len(origData)
     unpadding := int(origData[length-1])
