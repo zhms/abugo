@@ -31,9 +31,12 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -191,14 +194,31 @@ func GetDbResult(rows *sql.Rows, ref interface{}) *AbuDbError {
 	for i := range scans {
 		scans[i] = &scans[i]
 	}
-	rows.Scan(scans...)
+	errscan := rows.Scan(scans...)
+	if errscan != nil {
+		return &AbuDbError{1, errscan.Error()}
+	}
 	data := make(map[string]interface{})
+	ct, _ := rows.ColumnTypes()
 	for i := range fields {
 		if scans[i] != nil {
-			if reflect.TypeOf(scans[i]).Name() == "" {
-				data[fields[i]] = string(scans[i].([]uint8))
+			typename := ct[i].DatabaseTypeName()
+			if typename == "INT" || typename == "BIGINT" || typename == "TINYINT" {
+				if reflect.TypeOf(scans[i]).Name() == "" {
+					v, _ := strconv.ParseInt(string(scans[i].([]uint8)), 10, 64)
+					data[fields[i]] = v
+				} else {
+					data[fields[i]] = scans[i]
+				}
+			} else if typename == "DOUBLE" || typename == "DECIMAL" {
+				if reflect.TypeOf(scans[i]).Name() == "" {
+					v, _ := strconv.ParseFloat(string(scans[i].([]uint8)), 64)
+					data[fields[i]] = v
+				} else {
+					data[fields[i]] = scans[i]
+				}
 			} else {
-				data[fields[i]] = scans[i]
+				data[fields[i]] = string(scans[i].([]uint8))
 			}
 		}
 	}
@@ -206,6 +226,7 @@ func GetDbResult(rows *sql.Rows, ref interface{}) *AbuDbError {
 	abuerr := AbuDbError{}
 	err := json.Unmarshal(jdata, &abuerr)
 	if err != nil {
+		logs.Error(err)
 		return &AbuDbError{1, err.Error()}
 	}
 	if abuerr.ErrCode != 0 && len(abuerr.ErrMsg) > 0 {
@@ -213,6 +234,7 @@ func GetDbResult(rows *sql.Rows, ref interface{}) *AbuDbError {
 	}
 	err = json.Unmarshal(jdata, ref)
 	if err != nil {
+		logs.Error(err)
 		return &AbuDbError{1, err.Error()}
 	}
 	return nil
@@ -1134,4 +1156,160 @@ func VerifyGoogleCode(secret string, code string) bool {
 		return true
 	}
 	return false
+}
+
+func ReadAllText(path string) string {
+	file, err := os.Open(path)
+	if err != nil {
+		logs.Error(err)
+		return ""
+	}
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		logs.Error(err)
+		return ""
+	}
+	return string(bytes)
+}
+
+func TimeToUtc(timestr string) string {
+	t, _ := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
+	return t.UTC().Format("2006-01-02T15:04:05Z")
+}
+
+type AbuWhere struct {
+	OrderBy string
+	sql     string
+	Params  []interface{}
+}
+
+func (c *AbuWhere) Clean() {
+	c.sql = ""
+	c.Params = []interface{}{}
+}
+
+func (c *AbuWhere) Append(ch string) {
+	c.sql += ch
+}
+
+func (c *AbuWhere) AddInt(o string, f string, v int, iv int) {
+	if v == iv {
+		return
+	}
+	if len(c.sql) == 0 {
+		c.sql += "where "
+	}
+	if c.sql != "where " {
+		c.sql += o
+	}
+	c.sql += " "
+	c.sql += f
+	c.sql += " = ?"
+	c.Params = append(c.Params, v)
+}
+
+func (c *AbuWhere) AddInt32(o string, f string, v int32, iv int32) {
+	if v == iv {
+		return
+	}
+	if len(c.sql) == 0 {
+		c.sql += "where "
+	}
+	if c.sql != "where " {
+		c.sql += o
+	}
+	c.sql += " "
+	c.sql += f
+	c.sql += " = ?"
+	c.Params = append(c.Params, v)
+}
+
+func (c *AbuWhere) AddInt64(o string, f string, v int64, iv int64) {
+	if v == iv {
+		return
+	}
+	if len(c.sql) == 0 {
+		c.sql += "where "
+	}
+	if c.sql != "where " {
+		c.sql += o
+	}
+	c.sql += " "
+	c.sql += f
+	c.sql += " = ?"
+	c.Params = append(c.Params, v)
+}
+
+func (c *AbuWhere) AddString(o string, f string, v string, iv string) {
+	if v == iv {
+		return
+	}
+	if len(c.sql) == 0 {
+		c.sql += "where "
+	}
+	if c.sql != "where " {
+		c.sql += o
+	}
+	c.sql += " "
+	c.sql += f
+	c.sql += " = ?"
+	c.Params = append(c.Params, v)
+}
+
+func (c *AbuWhere) AddFloat32(o string, f string, v float32, iv float32) {
+	if v == iv {
+		return
+	}
+	if len(c.sql) == 0 {
+		c.sql += "where "
+	}
+	if c.sql != "where " {
+		c.sql += o
+	}
+	c.sql += " "
+	c.sql += f
+	c.sql += " = ?"
+	c.Params = append(c.Params, v)
+}
+
+func (c *AbuWhere) AddFloat64(o string, f string, v float64, iv float64) {
+	if v == iv {
+		return
+	}
+	if len(c.sql) == 0 {
+		c.sql += "where "
+	}
+	if c.sql != "where " {
+		c.sql += o
+	}
+	c.sql += " "
+	c.sql += f
+	c.sql += " = ?"
+	c.Params = append(c.Params, v)
+}
+
+func (c *AbuWhere) Sql(table string, page int, pagesize int) string {
+	if len(c.OrderBy) == 0 {
+		c.OrderBy = "DESC"
+	}
+	if strings.ToUpper(c.OrderBy) == "DESC" {
+		sql := fmt.Sprintf("SELECT * FROM %s WHERE id <= (SELECT id FROM %s %s ORDER BY id %s LIMIT %d,1) %s ORDER BY id %s LIMIT %d", table, table, c.sql, c.OrderBy, (page-1)*pagesize, strings.Replace(c.sql, "where", "and", -1), c.OrderBy, pagesize)
+		return sql
+	} else {
+		c.OrderBy = "ASC"
+		sql := fmt.Sprintf("SELECT * FROM %s WHERE id >= (SELECT id FROM %s %s ORDER BY id %s LIMIT %d,1) %s ORDER BY id %s LIMIT %d", table, table, c.sql, c.OrderBy, (page-1)*pagesize, strings.Replace(c.sql, "where", "and", -1), c.OrderBy, pagesize)
+		return sql
+	}
+}
+
+func (c *AbuWhere) CountSql(table string) string {
+	sql := fmt.Sprintf("select count(id) as count from %s %s", table, c.sql)
+	return sql
+}
+
+func (c *AbuWhere) GetParams() []interface{} {
+	params := []interface{}{}
+	params = append(params, c.Params...)
+	params = append(params, c.Params...)
+	return params
 }
