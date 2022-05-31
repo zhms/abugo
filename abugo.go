@@ -11,6 +11,7 @@ package abugo
 	go get github.com/gorilla/websocket
 	go get github.com/jinzhu/gorm
 	go get github.com/imroc/req
+	go get test
 */
 import (
 	"bytes"
