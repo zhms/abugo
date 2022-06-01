@@ -1314,3 +1314,5 @@ func (c *AbuWhere) GetParams() []interface{} {
 	params = append(params, c.Params...)
 	return params
 }
+
+
