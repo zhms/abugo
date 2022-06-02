@@ -11,7 +11,7 @@ package abugo
 	go get github.com/gorilla/websocket
 	go get github.com/jinzhu/gorm
 	go get github.com/imroc/req
-	go get test
+	go get github.com/go-playground/validator/v10
 */
 import (
 	"bytes"
