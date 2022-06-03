@@ -12,6 +12,7 @@ package abugo
 	go get github.com/jinzhu/gorm
 	go get github.com/imroc/req
 	go get github.com/go-playground/validator/v10
+	go get github.com/go-playground/universal-translator
 */
 import (
 	"bytes"
@@ -47,6 +48,7 @@ import (
 	"github.com/beego/beego/logs"
 	"github.com/garyburd/redigo/redis"
 	"github.com/gin-gonic/gin"
+	val "github.com/go-playground/validator/v10"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/websocket"
 	uuid "github.com/satori/go.uuid"
@@ -299,7 +301,10 @@ func abuhttpcors() gin.HandlerFunc {
 }
 
 func (c *AbuHttpContent) RequestData(obj interface{}) error {
-	return c.gin.ShouldBindJSON(obj)
+	c.gin.ShouldBindJSON(obj)
+	validator := val.New()
+	err := validator.Struct(obj)
+	return err
 }
 
 func (c *AbuHttpContent) Query(key string) string {
@@ -1179,9 +1184,10 @@ func TimeToUtc(timestr string) string {
 }
 
 type AbuWhere struct {
-	OrderBy string
-	sql     string
-	Params  []interface{}
+	OrderKey string
+	OrderBy  string
+	sql      string
+	Params   []interface{}
 }
 
 func (c *AbuWhere) Clean() {
@@ -1299,18 +1305,24 @@ func (c *AbuWhere) Sql(table string, page int, pagesize int) string {
 	if len(c.OrderBy) == 0 {
 		c.OrderBy = "DESC"
 	}
+	if len(c.OrderKey) == 0 {
+		c.OrderKey = "Id"
+	}
 	if strings.ToUpper(c.OrderBy) == "DESC" {
-		sql := fmt.Sprintf("SELECT * FROM %s WHERE id <= (SELECT id FROM %s %s ORDER BY id %s LIMIT %d,1) %s ORDER BY id %s LIMIT %d", table, table, c.sql, c.OrderBy, (page-1)*pagesize, strings.Replace(c.sql, "where", "and", -1), c.OrderBy, pagesize)
+		sql := fmt.Sprintf("SELECT * FROM %s WHERE %s <= (SELECT %s FROM %s %s ORDER BY %s %s LIMIT %d,1) %s ORDER BY %s %s LIMIT %d", table, c.OrderKey, c.OrderKey, table, c.sql, c.OrderKey, c.OrderBy, (page-1)*pagesize, strings.Replace(c.sql, "where", "and", -1), c.OrderKey, c.OrderBy, pagesize)
 		return sql
 	} else {
 		c.OrderBy = "ASC"
-		sql := fmt.Sprintf("SELECT * FROM %s WHERE id >= (SELECT id FROM %s %s ORDER BY id %s LIMIT %d,1) %s ORDER BY id %s LIMIT %d", table, table, c.sql, c.OrderBy, (page-1)*pagesize, strings.Replace(c.sql, "where", "and", -1), c.OrderBy, pagesize)
+		sql := fmt.Sprintf("SELECT * FROM %s WHERE %s >= (SELECT %s FROM %s %s ORDER BY %s %s LIMIT %d,1) %s ORDER BY %s %s LIMIT %d", table, c.OrderKey, c.OrderKey, table, c.sql, c.OrderKey, c.OrderBy, (page-1)*pagesize, strings.Replace(c.sql, "where", "and", -1), c.OrderKey, c.OrderBy, pagesize)
 		return sql
 	}
 }
 
 func (c *AbuWhere) CountSql(table string) string {
-	sql := fmt.Sprintf("select count(id) as count from %s %s", table, c.sql)
+	if len(c.OrderKey) == 0 {
+		c.OrderKey = "Id"
+	}
+	sql := fmt.Sprintf("select count(%s) as count from %s %s", c.OrderKey, table, c.sql)
 	return sql
 }
 
