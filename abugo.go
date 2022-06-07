@@ -230,7 +230,7 @@ func GetDbResult(rows *sql.Rows, ref interface{}) *AbuDbError {
 	err := json.Unmarshal(jdata, &abuerr)
 	if err != nil {
 		logs.Error(err)
-		return &AbuDbError{1, err.Error()}
+		return &AbuDbError{2, err.Error()}
 	}
 	if abuerr.ErrCode != 0 && len(abuerr.ErrMsg) > 0 {
 		return &abuerr
@@ -238,7 +238,7 @@ func GetDbResult(rows *sql.Rows, ref interface{}) *AbuDbError {
 	err = json.Unmarshal(jdata, ref)
 	if err != nil {
 		logs.Error(err)
-		return &AbuDbError{1, err.Error()}
+		return &AbuDbError{3, err.Error()}
 	}
 	return nil
 }
@@ -383,14 +383,46 @@ func (ctx *AbuHttpContent) RespOK(objects ...interface{}) {
 	ctx.gin.JSON(http.StatusOK, resp)
 }
 
-func (ctx *AbuHttpContent) RespErr(errcode int, errmsg string) {
-	resp := new(HttpResponse)
-	ctx.Put("errcode", errcode)
-	ctx.Put("errmsg", errmsg)
-	resp.Code = HTTP_RESPONSE_CODE_ERROR
-	resp.Msg = HTTP_RESPONSE_CODE_ERROR_MESSAGE
-	resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
-	ctx.gin.JSON(http.StatusOK, resp)
+func (ctx *AbuHttpContent) RespErr(err error, errcode *int) bool {
+	(*errcode)--
+	if err != nil {
+		resp := new(HttpResponse)
+		ctx.Put("errcode", errcode)
+		ctx.Put("errmsg", err.Error())
+		resp.Code = HTTP_RESPONSE_CODE_ERROR
+		resp.Msg = HTTP_RESPONSE_CODE_ERROR_MESSAGE
+		resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
+		ctx.gin.JSON(http.StatusOK, resp)
+	}
+	return err != nil
+}
+
+func (ctx *AbuHttpContent) RespDbErr(dberr *AbuDbError) bool {
+	if dberr != nil && dberr.ErrCode > 0 && len(dberr.ErrMsg) > 0 {
+		resp := new(HttpResponse)
+		ctx.Put("errcode", dberr.ErrCode)
+		ctx.Put("errmsg", dberr.ErrMsg)
+		resp.Code = HTTP_RESPONSE_CODE_ERROR
+		resp.Msg = HTTP_RESPONSE_CODE_ERROR_MESSAGE
+		resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
+		ctx.gin.JSON(http.StatusOK, resp)
+		return true
+	}
+	return false
+}
+
+func (ctx *AbuHttpContent) RespErrString(err bool, errcode *int, errmsg string) bool {
+	(*errcode)--
+	if err {
+		resp := new(HttpResponse)
+		ctx.Put("errcode", errcode)
+		ctx.Put("errmsg", errmsg)
+		resp.Code = HTTP_RESPONSE_CODE_ERROR
+		resp.Msg = HTTP_RESPONSE_CODE_ERROR_MESSAGE
+		resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
+		ctx.gin.JSON(http.StatusOK, resp)
+	}
+	return err
 }
 
 func (ctx *AbuHttpContent) RespNoAuth(errcode int, errmsg string) {
@@ -665,6 +697,40 @@ func (c *AbuRedis) Expire(k string, to int) error {
 	return nil
 }
 
+func (c *AbuRedis) HSet(k string, f string, v interface{}) error {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	output, _ := json.Marshal(&v)
+	_, err := conn.Do("hset", k, f, string(output))
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (c *AbuRedis) HGet(k string, f string) interface{} {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("hget", k, f)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	return ret
+}
+
+func (c *AbuRedis) HDel(k string, f string) error {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("hdel", k, f)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	return nil
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 //db
 /////////////////////////////////////////////////////////////////////////////////
@@ -926,36 +992,39 @@ func RsaSign(data interface{}, privatekey string) string {
 	privatekey = strings.Replace(privatekey, "-----END PRIVATE KEY-----", "", -1)
 	privatekey = strings.Replace(privatekey, "-----BEGIN RSA PRIVATE KEY-----", "", -1)
 	privatekey = strings.Replace(privatekey, "-----END RSA PRIVATE KEY-----", "", -1)
-	jbytes, _ := json.Marshal(&data)
-	jdata := make(map[string]interface{})
-	erra := json.Unmarshal(jbytes, &jdata)
-	if erra != nil {
-		logs.Error(erra)
-		return ""
-	}
+	t := reflect.TypeOf(data)
+	v := reflect.ValueOf(data)
 	keys := []string{}
-	for k := range jdata {
-		keys = append(keys, k)
+	for i := 0; i < t.NumField(); i++ {
+		fn := strings.ToLower(t.Field(i).Name)
+		if fn != "sign" {
+			keys = append(keys, t.Field(i).Name)
+		}
 	}
 	sort.Slice(keys, func(i, j int) bool {
 		return keys[i] < keys[j]
 	})
-	signstr := ""
+	var sb strings.Builder
 	for i := 0; i < len(keys); i++ {
-		if strings.ToLower(keys[i]) == "sign" {
-			continue
+		switch sv := v.FieldByName(keys[i]).Interface().(type) {
+		case string:
+			sb.WriteString(sv)
+		case int:
+			sb.WriteString(fmt.Sprint(sv))
+		case int8:
+			sb.WriteString(fmt.Sprint(sv))
+		case int16:
+			sb.WriteString(fmt.Sprint(sv))
+		case int32:
+			sb.WriteString(fmt.Sprint(sv))
+		case int64:
+			sb.WriteString(fmt.Sprint(sv))
+		case float32:
+			sb.WriteString(fmt.Sprint(sv))
+		case float64:
+			sb.WriteString(fmt.Sprint(sv))
 		}
-		if reflect.TypeOf(jdata[keys[i]]).Name() == "" {
-			d := jdata[keys[i]].([]interface{})
-			for j := 0; j < len(d); j++ {
-				signstr += fmt.Sprint(d[j])
-			}
-		} else {
-			signstr += fmt.Sprint(jdata[keys[i]])
-		}
-
 	}
-	fmt.Println(signstr)
 	privatekeybase64, errb := base64.StdEncoding.DecodeString(privatekey)
 	if errb != nil {
 		logs.Error(errb)
@@ -966,7 +1035,7 @@ func RsaSign(data interface{}, privatekey string) string {
 		logs.Error(errc)
 		return ""
 	}
-	hashmd5 := md5.Sum([]byte(signstr))
+	hashmd5 := md5.Sum([]byte(sb.String()))
 	hashed := hashmd5[:]
 	sign, errd := rsa.SignPKCS1v15(crand.Reader, privatekeyx509.(*rsa.PrivateKey), crypto.MD5, hashed)
 	if errd != nil {
@@ -976,40 +1045,45 @@ func RsaSign(data interface{}, privatekey string) string {
 	return base64.StdEncoding.EncodeToString(sign)
 }
 
-func RsaVerify(data interface{}, signedstr string, publickey string) bool {
+func RsaVerify(data interface{}, publickey string) bool {
 	publickey = strings.Replace(publickey, "-----BEGIN PUBLIC KEY-----", "", -1)
 	publickey = strings.Replace(publickey, "-----END PUBLIC KEY-----", "", -1)
 	publickey = strings.Replace(publickey, "-----BEGIN RSA PUBLIC KEY-----", "", -1)
 	publickey = strings.Replace(publickey, "-----END RSA PUBLIC KEY-----", "", -1)
-	jbytes, _ := json.Marshal(&data)
-	jdata := make(map[string]interface{})
-	erra := json.Unmarshal(jbytes, &jdata)
-	if erra != nil {
-		logs.Error(erra)
-		return false
-	}
+	t := reflect.TypeOf(data)
+	v := reflect.ValueOf(data)
 	keys := []string{}
-	for k := range jdata {
-		keys = append(keys, k)
+	for i := 0; i < t.NumField(); i++ {
+		fn := strings.ToLower(t.Field(i).Name)
+		if fn != "sign" {
+			keys = append(keys, t.Field(i).Name)
+		}
 	}
 	sort.Slice(keys, func(i, j int) bool {
 		return keys[i] < keys[j]
 	})
-	signstr := ""
+	var sb strings.Builder
 	for i := 0; i < len(keys); i++ {
-		if strings.ToLower(keys[i]) == "sign" {
-			continue
+		switch sv := v.FieldByName(keys[i]).Interface().(type) {
+		case string:
+			sb.WriteString(sv)
+		case int:
+			sb.WriteString(fmt.Sprint(sv))
+		case int8:
+			sb.WriteString(fmt.Sprint(sv))
+		case int16:
+			sb.WriteString(fmt.Sprint(sv))
+		case int32:
+			sb.WriteString(fmt.Sprint(sv))
+		case int64:
+			sb.WriteString(fmt.Sprint(sv))
+		case float32:
+			sb.WriteString(fmt.Sprint(sv))
+		case float64:
+			sb.WriteString(fmt.Sprint(sv))
 		}
-		if reflect.TypeOf(jdata[keys[i]]).Name() == "" {
-			d := jdata[keys[i]].([]interface{})
-			for j := 0; j < len(d); j++ {
-				signstr += fmt.Sprint(d[j])
-			}
-		} else {
-			signstr += fmt.Sprint(jdata[keys[i]])
-		}
-
 	}
+	signedstr := fmt.Sprint(v.FieldByName("Sign"))
 	publickeybase64, errb := base64.StdEncoding.DecodeString(publickey)
 	if errb != nil {
 		logs.Error(errb)
@@ -1021,7 +1095,7 @@ func RsaVerify(data interface{}, signedstr string, publickey string) bool {
 		return false
 	}
 	hash := md5.New()
-	hash.Write([]byte(signstr))
+	hash.Write([]byte(sb.String()))
 	signdata, _ := base64.StdEncoding.DecodeString(signedstr)
 	errd := rsa.VerifyPKCS1v15(publickeyx509.(*rsa.PublicKey), crypto.MD5, hash.Sum(nil), signdata)
 	return errd == nil
