@@ -441,7 +441,7 @@ func (c *AbuHttp) Init(cfgkey string) {
 	c.gin.Use(abuhttpcors())
 	tokenhost := viper.GetString("server.token.host")
 	if len(tokenhost) > 0 {
-		c.tokenrefix = fmt.Sprint(get_config_string("server.systemname", ""), ":", get_config_string("server.token.prefix", ""))
+		c.tokenrefix = fmt.Sprint(get_config_string("server.systemname", ""), ":", get_config_string("server.modulename", ""), ":token")
 		c.token = new(AbuRedis)
 		c.tokenlifetime = get_config_int("server.token.lifetime", 0)
 		c.token.Init("server.token")
