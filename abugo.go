@@ -1,6 +1,6 @@
 package abugo
 
-/*  test
+/*
 	go get github.com/beego/beego/logs
 	go get github.com/spf13/viper
 	go get github.com/gin-gonic/gin
