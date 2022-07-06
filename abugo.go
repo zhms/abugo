@@ -456,6 +456,10 @@ func (c *AbuHttp) Init(cfgkey string) {
 func (c *AbuHttp) Get(path string, handlers ...AbuHttpHandler) {
 	c.gin.GET(path, func(gc *gin.Context) {
 		ctx := &AbuHttpContent{gc, "", ""}
+		if c.token == nil {
+			ctx.RespNoAuth(-1, "未配置token redis")
+			return
+		}
 		tokenstr := gc.GetHeader("x-token")
 		if len(tokenstr) == 0 {
 			ctx.RespNoAuth(1, "请在header填写:x-token")
@@ -488,11 +492,16 @@ func (c *AbuHttp) GetNoAuth(path string, handlers ...AbuHttpHandler) {
 func (c *AbuHttp) Post(path string, handlers ...AbuHttpHandler) {
 	c.gin.POST(path, func(gc *gin.Context) {
 		ctx := &AbuHttpContent{gc, "", ""}
+		if c.token == nil {
+			ctx.RespNoAuth(-1, "未配置token redis")
+			return
+		}
 		tokenstr := gc.GetHeader("x-token")
 		if len(tokenstr) == 0 {
 			ctx.RespNoAuth(1, "请在header填写:x-token")
 			return
 		}
+
 		rediskey := fmt.Sprint(c.tokenrefix, ":", tokenstr)
 		tokendata := c.token.Get(rediskey)
 		if tokendata == nil {
