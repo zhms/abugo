@@ -151,7 +151,6 @@ func GetUuid() string {
 	return id.String()
 }
 func Run() {
-	logs.Debug("*********start*********")
 	for i := range abuwsmsgqueue {
 		if i.MsgData == nil {
 			i.Ws.dispatch(i.MsgType, i.Id, abumsgdata{}, i.callback)
@@ -672,6 +671,17 @@ func (c *AbuRedis) Set(k string, v interface{}) error {
 	return nil
 }
 
+func (c *AbuRedis) SetString(k string, v string) error {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("set", k, v)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
 func (c *AbuRedis) SetEx(k string, to int, v interface{}) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
@@ -711,6 +721,17 @@ func (c *AbuRedis) HSet(k string, f string, v interface{}) error {
 	defer conn.Close()
 	output, _ := json.Marshal(&v)
 	_, err := conn.Do("hset", k, f, string(output))
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (c *AbuRedis) HSetString(k string, f string, v string) error {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("hset", k, f, v)
 	if err != nil {
 		logs.Error(err.Error())
 		return err
