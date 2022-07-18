@@ -1319,8 +1319,8 @@ func (c *AbuWhere) Append(ch string) {
 	c.sql += ch
 }
 
-func (c *AbuWhere) AddInt(o string, f string, v int, iv int) {
-	if v == iv {
+func (c *AbuWhere) AddInt(o string, field string, value int, invalid_value int) {
+	if value == invalid_value {
 		return
 	}
 	if len(c.sql) == 0 {
@@ -1331,13 +1331,47 @@ func (c *AbuWhere) AddInt(o string, f string, v int, iv int) {
 		c.sql += o
 	}
 	c.sql += " "
-	c.sql += f
+	c.sql += field
+	c.sql += " = ?"
+	c.Params = append(c.Params, value)
+}
+
+func (c *AbuWhere) AddInt32(operator string, field string, value int32, invalid_value int32) {
+	if value == invalid_value {
+		return
+	}
+	if len(c.sql) == 0 {
+		c.sql += "where "
+	}
+	if c.sql != "where " {
+		c.sql += " "
+		c.sql += operator
+	}
+	c.sql += " "
+	c.sql += field
+	c.sql += " = ?"
+	c.Params = append(c.Params, value)
+}
+
+func (c *AbuWhere) AddInt64(operator string, field string, v int64, invalid_value int64) {
+	if v == invalid_value {
+		return
+	}
+	if len(c.sql) == 0 {
+		c.sql += "where "
+	}
+	if c.sql != "where " {
+		c.sql += " "
+		c.sql += operator
+	}
+	c.sql += " "
+	c.sql += field
 	c.sql += " = ?"
 	c.Params = append(c.Params, v)
 }
 
-func (c *AbuWhere) AddInt32(o string, f string, v int32, iv int32) {
-	if v == iv {
+func (c *AbuWhere) AddString(operator string, field string, value string, invalid_value string) {
+	if value == invalid_value {
 		return
 	}
 	if len(c.sql) == 0 {
@@ -1345,16 +1379,16 @@ func (c *AbuWhere) AddInt32(o string, f string, v int32, iv int32) {
 	}
 	if c.sql != "where " {
 		c.sql += " "
-		c.sql += o
+		c.sql += operator
 	}
 	c.sql += " "
-	c.sql += f
+	c.sql += field
 	c.sql += " = ?"
-	c.Params = append(c.Params, v)
+	c.Params = append(c.Params, value)
 }
 
-func (c *AbuWhere) AddInt64(o string, f string, v int64, iv int64) {
-	if v == iv {
+func (c *AbuWhere) AddFloat32(operator string, field string, value float32, invalid_value float32) {
+	if value == invalid_value {
 		return
 	}
 	if len(c.sql) == 0 {
@@ -1362,16 +1396,16 @@ func (c *AbuWhere) AddInt64(o string, f string, v int64, iv int64) {
 	}
 	if c.sql != "where " {
 		c.sql += " "
-		c.sql += o
+		c.sql += operator
 	}
 	c.sql += " "
-	c.sql += f
+	c.sql += field
 	c.sql += " = ?"
-	c.Params = append(c.Params, v)
+	c.Params = append(c.Params, value)
 }
 
-func (c *AbuWhere) AddString(o string, f string, v string, iv string) {
-	if v == iv {
+func (c *AbuWhere) AddFloat64(operator string, field string, value float64, invalid_value float64) {
+	if value == invalid_value {
 		return
 	}
 	if len(c.sql) == 0 {
@@ -1379,46 +1413,12 @@ func (c *AbuWhere) AddString(o string, f string, v string, iv string) {
 	}
 	if c.sql != "where " {
 		c.sql += " "
-		c.sql += o
+		c.sql += operator
 	}
 	c.sql += " "
-	c.sql += f
+	c.sql += field
 	c.sql += " = ?"
-	c.Params = append(c.Params, v)
-}
-
-func (c *AbuWhere) AddFloat32(o string, f string, v float32, iv float32) {
-	if v == iv {
-		return
-	}
-	if len(c.sql) == 0 {
-		c.sql += "where "
-	}
-	if c.sql != "where " {
-		c.sql += " "
-		c.sql += o
-	}
-	c.sql += " "
-	c.sql += f
-	c.sql += " = ?"
-	c.Params = append(c.Params, v)
-}
-
-func (c *AbuWhere) AddFloat64(o string, f string, v float64, iv float64) {
-	if v == iv {
-		return
-	}
-	if len(c.sql) == 0 {
-		c.sql += "where "
-	}
-	if c.sql != "where " {
-		c.sql += " "
-		c.sql += o
-	}
-	c.sql += " "
-	c.sql += f
-	c.sql += " = ?"
-	c.Params = append(c.Params, v)
+	c.Params = append(c.Params, value)
 }
 
 func (c *AbuWhere) Sql(table string, page int, pagesize int) string {
