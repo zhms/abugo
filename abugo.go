@@ -33,7 +33,11 @@ func Init() {
 	}
 }
 
-func GetStringFromInterface(v interface{}) string {
+func GetMapString(mp *map[string]interface{}, field string) string {
+	if mp == nil {
+		return ""
+	}
+	v := (*mp)[field]
 	if v == nil {
 		return ""
 	}
@@ -54,7 +58,11 @@ func GetStringFromInterface(v interface{}) string {
 	return ""
 }
 
-func GetInt64FromInterface(v interface{}) int64 {
+func GetMapInt64(mp *map[string]interface{}, field string) int64 {
+	if mp == nil {
+		return 0
+	}
+	v := (*mp)[field]
 	if v == nil {
 		return 0
 	}
@@ -79,7 +87,11 @@ func GetInt64FromInterface(v interface{}) int64 {
 	return 0
 }
 
-func GetIntFromInterface(v interface{}) int32 {
+func GetMapInt(mp *map[string]interface{}, field string) int32 {
+	if mp == nil {
+		return 0
+	}
+	v := (*mp)[field]
 	if v == nil {
 		return 0
 	}
@@ -104,7 +116,11 @@ func GetIntFromInterface(v interface{}) int32 {
 	return 0
 }
 
-func GetFloat64FromInterface(v interface{}) float64 {
+func GetMapFloat64(mp *map[string]interface{}, field string) float64 {
+	if mp == nil {
+		return 0
+	}
+	v := (*mp)[field]
 	if v == nil {
 		return 0
 	}
@@ -129,7 +145,11 @@ func GetFloat64FromInterface(v interface{}) float64 {
 	return 0
 }
 
-func GetFloatFromInterface(v interface{}) float32 {
+func GetMapFloat(mp *map[string]interface{}, field string) float32 {
+	if mp == nil {
+		return 0
+	}
+	v := (*mp)[field]
 	if v == nil {
 		return 0
 	}
