@@ -342,7 +342,7 @@ func (c *AbuDbTable) Replace(insert map[string]interface{}) (int64, error) {
 	return dbresult.LastInsertId()
 }
 
-func (c *AbuDbTable) PageData(Page int, PageSize int) (int64, *[]map[string]interface{}) {
+func (c *AbuDbTable) PageData(Page int, PageSize int) (*[]map[string]interface{}, int64) {
 	if Page <= 0 {
 		Page = 1
 	}
@@ -399,14 +399,14 @@ func (c *AbuDbTable) PageData(Page int, PageSize int) (int64, *[]map[string]inte
 	dbresult, err := c.db.Conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
-		return 0, &[]map[string]interface{}{}
+		return &[]map[string]interface{}{}, 0
 	}
 	dbresult.Next()
 	var total int
 	dbresult.Scan(&total)
 	dbresult.Close()
 	if total == 0 {
-		return 0, &[]map[string]interface{}{}
+		return &[]map[string]interface{}{}, 0
 	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s where %s order by %s limit %d,1", orderfield, c.tablename, wstr, c.orderby, (Page-1)*PageSize)
@@ -419,10 +419,10 @@ func (c *AbuDbTable) PageData(Page int, PageSize int) (int64, *[]map[string]inte
 	dbresult, err = c.db.Conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
-		return 0, &[]map[string]interface{}{}
+		return &[]map[string]interface{}{}, 0
 	}
 	if !dbresult.Next() {
-		return int64(total), &[]map[string]interface{}{}
+		return &[]map[string]interface{}{}, int64(total)
 	}
 	var minvalue int
 	dbresult.Scan(&minvalue)
@@ -490,12 +490,12 @@ func (c *AbuDbTable) PageData(Page int, PageSize int) (int64, *[]map[string]inte
 	dbresult, err = c.db.Conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
-		return 0, &[]map[string]interface{}{}
+		return &[]map[string]interface{}{}, 0
 	}
 	datas := []map[string]interface{}{}
 	for dbresult.Next() {
 		datas = append(datas, *c.getone(dbresult))
 	}
 	dbresult.Close()
-	return int64(total), &datas
+	return &datas, int64(total)
 }
