@@ -342,8 +342,7 @@ func (c *AbuDbTable) Replace(insert map[string]interface{}) (int64, error) {
 	return dbresult.LastInsertId()
 }
 
-//PageDataEx 必须指定order by ,且order by的字段,必须是主键,或者唯一不重复的索引
-func (c *AbuDbTable) PageDataEx(Page int, PageSize int) (*[]map[string]interface{}, int64) {
+func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, orderby string) (*[]map[string]interface{}, int64) {
 	if Page <= 0 {
 		Page = 1
 	}
@@ -384,19 +383,11 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int) (*[]map[string]interface
 			wstr += v.Field
 		}
 	}
-	if c.orderby == "" {
-		logs.Error("PageDataEx 必须指定order by")
-		return &[]map[string]interface{}{}, 0
-	}
-	c.orderby = strings.Trim(c.orderby, " ")
-	orderbysplit := strings.Split(c.orderby, " ")
-	orderfield := strings.Trim(orderbysplit[0], " ")
-	orderby := strings.Trim(orderbysplit[len(orderbysplit)-1], " ")
 	orderby = strings.ToLower(orderby)
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("SELECT COUNT(%s) AS Total FROM %s where %s", orderfield, c.tablename, wstr)
+		sql = fmt.Sprintf("SELECT COUNT(%s) AS Total FROM %s where %s", orderbyfield, c.tablename, wstr)
 	} else {
-		sql = fmt.Sprintf("SELECT COUNT(%s) AS Total FROM %s %s", orderfield, c.tablename, wstr)
+		sql = fmt.Sprintf("SELECT COUNT(%s) AS Total FROM %s %s", orderbyfield, c.tablename, wstr)
 	}
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
@@ -414,9 +405,9 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int) (*[]map[string]interface
 		return &[]map[string]interface{}{}, 0
 	}
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s where %s order by %s limit %d,1", orderfield, c.tablename, wstr, c.orderby, (Page-1)*PageSize)
+		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s where %s order by %s limit %d,1", orderbyfield, c.tablename, wstr, c.orderby, (Page-1)*PageSize)
 	} else {
-		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s %s order by %s limit %d,1", orderfield, c.tablename, wstr, c.orderby, (Page-1)*PageSize)
+		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s %s order by %s limit %d,1", orderbyfield, c.tablename, wstr, c.orderby, (Page-1)*PageSize)
 	}
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
@@ -442,7 +433,7 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int) (*[]map[string]interface
 	if c.where == nil {
 		c.where = make(map[string]interface{})
 	}
-	c.where[fmt.Sprintf("%s.%s@-1@%s", c.tablename, orderfield, opt)] = minvalue
+	c.where[fmt.Sprintf("%s.%s@-1@%s", c.tablename, orderbyfield, opt)] = minvalue
 	wstr = ""
 	wv = []interface{}{}
 	order = []FieldValue{}
