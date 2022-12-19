@@ -383,6 +383,10 @@ func (c *AbuDbTable) PageData(Page int, PageSize int) (*[]map[string]interface{}
 			wstr += v.Field
 		}
 	}
+	if c.orderby == "" {
+		logs.Error("PageDataEx 必须指定order by")
+		return &[]map[string]interface{}{}, 0
+	}
 	c.orderby = strings.Trim(c.orderby, " ")
 	orderbysplit := strings.Split(c.orderby, " ")
 	orderfield := strings.Trim(orderbysplit[0], " ")
