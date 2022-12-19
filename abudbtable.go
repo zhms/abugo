@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/beego/beego/logs"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type AbuDbTable struct {
