@@ -18,6 +18,7 @@ const (
 )
 
 var snow_epoch int64 = 1514764800000
+var inited = false
 
 type snowflake struct {
 	mu        sync.Mutex
@@ -61,9 +62,13 @@ func NewIdWorker(node int64) {
 		step:      0,
 	}
 	idworker = snowflakeIns
+	inited = true
 }
 
 func AbuId() int64 {
+	if !inited {
+		return 0
+	}
 	return idworker.GetId()
 }
 
