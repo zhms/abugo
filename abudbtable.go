@@ -532,7 +532,7 @@ func (c *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, order
 		}
 	}
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("SELECT COUNT(*)  AS Total FROM %s where %s", c.tablename, wstr)
+		sql = fmt.Sprintf("SELECT COUNT(*) AS Total FROM %s where %s", c.tablename, wstr)
 	} else {
 		sql = fmt.Sprintf("SELECT COUNT(*) AS Total FROM %s %s", c.tablename, wstr)
 	}
