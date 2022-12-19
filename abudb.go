@@ -58,3 +58,8 @@ func (c *AbuDb) Conn() *sql.DB {
 func (c *AbuDb) Gorm() *gorm.DB {
 	return c.db
 }
+
+func (c *AbuDb) Table(tablename string) *AbuDbTable {
+	dbtable := AbuDbTable{tablename: tablename, selectstr: "*", db: c}
+	return &dbtable
+}
