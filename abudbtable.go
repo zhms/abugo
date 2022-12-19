@@ -342,7 +342,8 @@ func (c *AbuDbTable) Replace(insert map[string]interface{}) (int64, error) {
 	return dbresult.LastInsertId()
 }
 
-func (c *AbuDbTable) PageData(Page int, PageSize int) (*[]map[string]interface{}, int64) {
+//PageDataEx 必须指定order by ,且order by的字段,必须是主键,或者唯一不重复的索引
+func (c *AbuDbTable) PageDataEx(Page int, PageSize int) (*[]map[string]interface{}, int64) {
 	if Page <= 0 {
 		Page = 1
 	}
