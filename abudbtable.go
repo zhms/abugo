@@ -495,3 +495,85 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 	dbresult.Close()
 	return &datas, int64(total)
 }
+
+func (c *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, orderby string) (*[]map[string]interface{}, int64) {
+	sql := ""
+	wstr := ""
+	wv := []interface{}{}
+	type FieldValue struct {
+		Sort  int64
+		Field string
+		Value interface{}
+		Opt   string
+	}
+	order := []FieldValue{}
+	for k, v := range c.where {
+		ks := strings.Split(k, "@")
+		opt := "="
+		if len(ks) == 3 {
+			opt = ks[2]
+		}
+		if len(ks) == 2 || len(ks) == 3 {
+			sort, _ := strconv.ParseInt(ks[1], 10, 32)
+			order = append(order, FieldValue{Sort: sort, Field: ks[0], Value: v, Opt: opt})
+		} else if len(ks) == 1 {
+			order = append(order, FieldValue{Sort: 1000000, Field: k, Value: nil, Opt: opt})
+		}
+	}
+	sort.Slice(order, func(i, j int) bool {
+		return order[i].Sort < order[j].Sort
+	})
+	for _, v := range order {
+		if v.Value != nil {
+			wstr += fmt.Sprintf(" %s %s ? ", v.Field, v.Opt)
+			wv = append(wv, v.Value)
+		} else {
+			wstr += v.Field
+		}
+	}
+	if len(wstr) > 0 {
+		sql = fmt.Sprintf("SELECT COUNT(*) AS Total FROM %s where %s", c.tablename, wstr)
+	} else {
+		sql = fmt.Sprintf("SELECT COUNT(*) AS Total FROM %s %s", c.tablename, wstr)
+	}
+
+	if c.db.logmode {
+		logs.Debug(sql, wv...)
+	}
+	dbresult, err := c.db.Conn().Query(sql, wv...)
+	if err != nil {
+		logs.Error(err)
+		return &[]map[string]interface{}{}, 0
+	}
+	dbresult.Next()
+	var total int
+	dbresult.Scan(&total)
+	dbresult.Close()
+	if total == 0 {
+		return &[]map[string]interface{}{}, 0
+	}
+	if len(wstr) > 0 {
+		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s  ", c.selectstr, c.tablename, c.join, wstr)
+	} else {
+		sql = fmt.Sprintf("SELECT %s FROM %s %s ", c.selectstr, c.tablename, c.join)
+	}
+	orderbyex := "(" + orderbyfield + ") " + orderby
+	sql += fmt.Sprintf("order by %s", orderbyex)
+	sql += " "
+	sql += fmt.Sprintf("limit %d offset %d", PageSize, (Page-1)*PageSize)
+
+	if c.db.logmode {
+		logs.Debug(sql, wv...)
+	}
+	dbresult, err = c.db.Conn().Query(sql, wv...)
+	if err != nil {
+		logs.Error(err)
+		return &[]map[string]interface{}{}, 0
+	}
+	datas := []map[string]interface{}{}
+	for dbresult.Next() {
+		datas = append(datas, *c.getone(dbresult))
+	}
+	dbresult.Close()
+	return &datas, int64(total)
+}
