@@ -33,11 +33,7 @@ func Init() {
 	}
 }
 
-func GetMapString(mp *map[string]interface{}, field string) string {
-	if mp == nil {
-		return ""
-	}
-	v := (*mp)[field]
+func InterfaceToString(v interface{}) string {
 	if v == nil {
 		return ""
 	}
@@ -58,11 +54,15 @@ func GetMapString(mp *map[string]interface{}, field string) string {
 	return ""
 }
 
-func GetMapInt64(mp *map[string]interface{}, field string) int64 {
+func GetMapString(mp *map[string]interface{}, field string) string {
 	if mp == nil {
-		return 0
+		return ""
 	}
 	v := (*mp)[field]
+	return InterfaceToString(v)
+}
+
+func InterfaceToInt64(v interface{}) int64 {
 	if v == nil {
 		return 0
 	}
@@ -87,11 +87,15 @@ func GetMapInt64(mp *map[string]interface{}, field string) int64 {
 	return 0
 }
 
-func GetMapInt(mp *map[string]interface{}, field string) int32 {
+func GetMapInt64(mp *map[string]interface{}, field string) int64 {
 	if mp == nil {
 		return 0
 	}
 	v := (*mp)[field]
+	return InterfaceToInt64(v)
+}
+
+func InterfaceToInt(v interface{}) int32 {
 	if v == nil {
 		return 0
 	}
@@ -116,11 +120,15 @@ func GetMapInt(mp *map[string]interface{}, field string) int32 {
 	return 0
 }
 
-func GetMapFloat64(mp *map[string]interface{}, field string) float64 {
+func GetMapInt(mp *map[string]interface{}, field string) int32 {
 	if mp == nil {
 		return 0
 	}
 	v := (*mp)[field]
+	return InterfaceToInt(v)
+}
+
+func InterfaceToFloat64(v interface{}) float64 {
 	if v == nil {
 		return 0
 	}
@@ -145,11 +153,15 @@ func GetMapFloat64(mp *map[string]interface{}, field string) float64 {
 	return 0
 }
 
-func GetMapFloat(mp *map[string]interface{}, field string) float32 {
+func GetMapFloat64(mp *map[string]interface{}, field string) float64 {
 	if mp == nil {
 		return 0
 	}
 	v := (*mp)[field]
+	return InterfaceToFloat64(v)
+}
+
+func InterfaceToFloat(v interface{}) float32 {
 	if v == nil {
 		return 0
 	}
@@ -172,4 +184,12 @@ func GetMapFloat(mp *map[string]interface{}, field string) float32 {
 		return float32(v.(float64))
 	}
 	return 0
+}
+
+func GetMapFloat(mp *map[string]interface{}, field string) float32 {
+	if mp == nil {
+		return 0
+	}
+	v := (*mp)[field]
+	return InterfaceToFloat(v)
 }
