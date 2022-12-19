@@ -25,4 +25,8 @@ func Init() {
 		logs.Error(err)
 		return
 	}
+	nodeid := GetConfigInt64("server.node", false, 0)
+	if nodeid > 0 {
+		NewIdWorker(nodeid)
+	}
 }
