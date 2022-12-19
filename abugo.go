@@ -25,7 +25,7 @@ func Init() {
 		logs.Error(err)
 		return
 	}
-	nodeid := GetConfigInt64("server.node", false, 0)
+	nodeid := GetConfigInt64("server.snowflakeid", false, 0)
 	if nodeid > 0 {
 		NewIdWorker(nodeid)
 	}
