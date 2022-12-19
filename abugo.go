@@ -18,5 +18,5 @@ func Init() {
 	logs.SetLogger(logs.AdapterFile, `{"filename":"_log/logfile.log","maxsize":10485760}`)
 	logs.SetLogger(logs.AdapterConsole, `{"color":true}`)
 
-	fmt.Println("abugo init v1.0.3")
+	fmt.Println("abugo init v1.0.4")
 }
