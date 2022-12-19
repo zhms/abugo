@@ -1,7 +1,6 @@
 package abugo
 
 import (
-	"fmt"
 	"time"
 
 	mrand "math/rand"
@@ -26,5 +25,4 @@ func Init() {
 		logs.Error(err)
 		return
 	}
-	fmt.Println("abugo init v1.0.4")
 }
