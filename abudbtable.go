@@ -404,10 +404,11 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 	if total == 0 {
 		return &[]map[string]interface{}{}, 0
 	}
+	orderbyex := orderbyfield + " " + orderby
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s where %s order by %s limit %d,1", orderbyfield, c.tablename, wstr, c.orderby, (Page-1)*PageSize)
+		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s where %s order by %s limit %d,1", orderbyfield, c.tablename, wstr, orderbyex, (Page-1)*PageSize)
 	} else {
-		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s %s order by %s limit %d,1", orderbyfield, c.tablename, wstr, c.orderby, (Page-1)*PageSize)
+		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s %s order by %s limit %d,1", orderbyfield, c.tablename, wstr, orderbyex, (Page-1)*PageSize)
 	}
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
@@ -475,10 +476,9 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 	} else {
 		sql = fmt.Sprintf("SELECT %s FROM %s %s ", c.selectstr, c.tablename, c.join)
 	}
-	if len(c.orderby) > 0 {
-		sql += fmt.Sprintf("order by %s", c.orderby)
-		sql += " "
-	}
+	sql += fmt.Sprintf("order by %s", orderbyex)
+	sql += " "
+
 	sql += fmt.Sprintf("limit %d", PageSize)
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
