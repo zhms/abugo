@@ -146,3 +146,15 @@ func (c *AbuWebsocket) Connect(host string, callback AbuWsCallback) {
 		}
 	}()
 }
+
+func (c *AbuWebsocket) AddConnectCallback(callback AbuWsCallback) {
+	c.connect_callback = callback
+}
+
+func (c *AbuWebsocket) AddMsgCallback(msgid string, callback AbuWsMsgCallback) {
+	c.msg_callback.Store(msgid, callback)
+}
+
+func (c *AbuWebsocket) AddCloseCallback(callback AbuWsCallback) {
+	c.close_callback = callback
+}
