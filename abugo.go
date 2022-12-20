@@ -19,6 +19,7 @@ func Init() {
 	logs.SetLogFuncCallDepth(3)
 	logs.SetLogger(logs.AdapterFile, `{"filename":"_log/logfile.log","maxsize":10485760}`)
 	logs.SetLogger(logs.AdapterConsole, `{"color":true}`)
+	viper.AddConfigPath("./")
 	viper.AddConfigPath("./config")
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
