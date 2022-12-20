@@ -352,7 +352,6 @@ type abumsgdata struct {
 }
 
 func (c *AbuHttp) ws(ctx *AbuHttpContent) {
-
 	conn, err := c.upgrader.Upgrade(ctx.Gin().Writer, ctx.Gin().Request, nil)
 	if err != nil {
 		logs.Error(err)
@@ -393,16 +392,21 @@ func (c *AbuHttp) ws(ctx *AbuHttpContent) {
 
 func (c *AbuHttp) WsSendMsg(id int64, msgid string, data interface{}) {
 	iconn, connok := c.idx_conn.Load(id)
+	if !connok {
+		return
+	}
 	imt, mtok := c.msgtype.Load(id)
-	if mtok && connok {
-		conn := iconn.(*websocket.Conn)
-		mt := imt.(int)
-		msg := abumsgdata{msgid, data}
-		msgbyte, jerr := json.Marshal(msg)
-		if jerr == nil {
-			werr := conn.WriteMessage(mt, msgbyte)
-			if werr != nil {
-			}
+	if !mtok {
+		imt = 1
+		mtok = true
+	}
+	conn := iconn.(*websocket.Conn)
+	mt := imt.(int)
+	msg := abumsgdata{msgid, data}
+	msgbyte, jerr := json.Marshal(msg)
+	if jerr == nil {
+		werr := conn.WriteMessage(mt, msgbyte)
+		if werr != nil {
 		}
 	}
 }
