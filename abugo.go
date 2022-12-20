@@ -33,6 +33,12 @@ func Init() {
 	}
 }
 
+func Run() {
+	for {
+		time.Sleep(time.Second * 1)
+	}
+}
+
 func InterfaceToString(v interface{}) string {
 	if v == nil {
 		return ""
