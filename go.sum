@@ -301,6 +301,10 @@ github.com/ugorji/go v1.2.7/go.mod h1:nF9osbDWLy6bDVv/Rtoh6QgnvNDpmCalQV5urGCCS6
 github.com/ugorji/go/codec v1.2.7 h1:YPXUKf7fYbp/y8xloBqZOw2qaVggbfwMlI8WM3wZUJ0=
 github.com/ugorji/go/codec v1.2.7/go.mod h1:WGN1fab3R1fzQlVQTkfxVtIBhWDRqOviHU95kRgeqEY=
 github.com/wendal/errors v0.0.0-20181209125328-7f31f4b264ec/go.mod h1:Q12BUT7DqIlHRmgv3RskH+UCM/4eqVMgI0EMmlSpAXc=
+github.com/yinheli/mahonia v0.0.0-20131226213531-0eef680515cc h1:7VHQaaNwHymWbj8lAcXMYX1qopebSBHwYC3ceXLWONU=
+github.com/yinheli/mahonia v0.0.0-20131226213531-0eef680515cc/go.mod h1:Pcc297eVCbkDBBVq8FbnI+qDUeIMrHy4Bo7nveAuCAs=
+github.com/yinheli/qqwry v0.0.0-20160229183603-f50680010f4a h1:VUPXGL4N1B5xqomxI4vZn0momgleh0hcH0PE/oIOsAI=
+github.com/yinheli/qqwry v0.0.0-20160229183603-f50680010f4a/go.mod h1:Zva9ErVtC2arl+9xtHwiXujgejX1S3VpOYExADJ9kio=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

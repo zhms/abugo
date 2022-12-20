@@ -3,6 +3,7 @@ package abugo
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	mrand "math/rand"
@@ -10,7 +11,10 @@ import (
 	"github.com/beego/beego/logs"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
+	"github.com/yinheli/qqwry"
 )
+
+var ipdata string
 
 func Init() {
 	mrand.Seed(time.Now().Unix())
@@ -32,6 +36,7 @@ func Init() {
 	if nodeid > 0 {
 		NewIdWorker(nodeid)
 	}
+	ipdata = GetConfigString("server.ipdata", false, "")
 }
 
 func Run() {
@@ -199,4 +204,17 @@ func GetMapFloat(mp *map[string]interface{}, field string) float32 {
 	}
 	v := (*mp)[field]
 	return InterfaceToFloat(v)
+}
+
+func GetIpLocation(ip string) string {
+	if ipdata == "" {
+		return ""
+	}
+	iptool := qqwry.NewQQwry("./config/ipdata.dat")
+	if strings.Index(ip, ".") > 0 {
+		iptool.Find(ip)
+		return fmt.Sprintf("%s %s", iptool.Country, iptool.City)
+	} else {
+		return ""
+	}
 }
