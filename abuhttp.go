@@ -217,7 +217,7 @@ func (ctx *AbuHttpContent) SaveUploadedFile(file *multipart.FileHeader, dst stri
 }
 
 func (c *AbuHttp) Init(cfgkey string) {
-	port := GetConfigInt(cfgkey, true, 0)
+	port := GetConfigInt(cfgkey+".port", true, 0)
 	c.gin = gin.New()
 	c.gin.Use(abuhttpcors())
 	tokenhost := viper.GetString("server.token.host")
