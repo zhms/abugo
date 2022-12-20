@@ -1,0 +1,36 @@
+server:
+  env: test #环境
+  snowflakeid: 123 #雪花算法节点
+  project: x_hash #项目名
+  module: adminapi #模块名
+  http:
+    port: 4134
+  token:
+    host: 20.89.58.159 #地址
+    port: 6889 #端口
+    db: 7 #数据库号
+    password: GLTjr3kTnlQ8wKwPvkUc #密码
+    maxidle: 10 #最大的空闲连接数，表示即使没有redis连接时依然可以保持N个空闲的连接，而不被清除，随时处于待命状态。
+    maxactive: 100 #最大的激活连接数，表示同时最多有N个连接
+    idletimeout: 60 #最大的空闲连接等待时间，超过此时间后，空闲连接将被关闭
+    lifetime: 2592000 #token过期时长
+  redis:
+    host: 20.89.58.159 #地址
+    port: 6889 #端口
+    db: 5 #数据库号
+    password: GLTjr3kTnlQ8wKwPvkUc #密码
+    maxidle: 10 #最大的空闲连接数，表示即使没有redis连接时依然可以保持N个空闲的连接，而不被清除，随时处于待命状态。
+    maxactive: 100 #最大的激活连接数，表示同时最多有N个连接
+    idletimeout: 60 #最大的空闲连接等待时间，超过此时间后，空闲连接将被关闭
+  db:
+    host: 20.89.58.159 #地址
+    port: 13678 #端口
+    user: root #账号
+    password: GLTjr3kTnlQ8wKwPvkUc #密码
+    database: x_hash_game #数据库名
+    connmaxidletime: 20 #最大待机时间
+    connmaxlifetime: 25 #连接最长生命周期
+    connmaxidle: 10 #最大等待连接数
+    connmaxopen: 100 #最大打开连接数
+    logmode: false #输出执行的sql
+
