@@ -112,10 +112,10 @@ func (c *AbuRedis) Publish(k, v interface{}) error {
 	return nil
 }
 
-func (c *AbuRedis) Get(k string) interface{} {
+func (c *AbuRedis) Get(key string) interface{} {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("get", k)
+	ret, err := conn.Do("get", key)
 	if err != nil {
 		logs.Error(err.Error())
 		return nil
@@ -123,11 +123,11 @@ func (c *AbuRedis) Get(k string) interface{} {
 	return ret
 }
 
-func (c *AbuRedis) Set(k string, v interface{}) error {
+func (c *AbuRedis) Set(key string, value interface{}) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	output, _ := json.Marshal(&v)
-	_, err := conn.Do("set", k, output)
+	output, _ := json.Marshal(&value)
+	_, err := conn.Do("set", key, output)
 	if err != nil {
 		logs.Error(err.Error())
 		return err
@@ -135,10 +135,10 @@ func (c *AbuRedis) Set(k string, v interface{}) error {
 	return nil
 }
 
-func (c *AbuRedis) SetString(k string, v string) error {
+func (c *AbuRedis) SetString(key string, value string) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	_, err := conn.Do("set", k, v)
+	_, err := conn.Do("set", key, value)
 	if err != nil {
 		logs.Error(err.Error())
 		return err
@@ -146,32 +146,21 @@ func (c *AbuRedis) SetString(k string, v string) error {
 	return nil
 }
 
-func (c *AbuRedis) SetEx(k string, to int, v interface{}) error {
+func (c *AbuRedis) SetEx(key string, expire int, value interface{}) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	output, _ := json.Marshal(&v)
-	_, err := conn.Do("setex", k, to, string(output))
+	output, _ := json.Marshal(&value)
+	_, err := conn.Do("setex", key, expire, string(output))
 	if err != nil {
 		logs.Error(err.Error())
 		return err
 	}
 	return nil
 }
-func (c *AbuRedis) SetStringEx(k string, to int, v string) error {
+func (c *AbuRedis) SetStringEx(key string, expire int, value string) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	_, err := conn.Do("setex", k, to, v)
-	if err != nil {
-		logs.Error(err.Error())
-		return err
-	}
-	return nil
-}
-
-func (c *AbuRedis) Del(k string) error {
-	conn := c.redispool.Get()
-	defer conn.Close()
-	_, err := conn.Do("del", k)
+	_, err := conn.Do("setex", key, expire, value)
 	if err != nil {
 		logs.Error(err.Error())
 		return err
@@ -179,10 +168,10 @@ func (c *AbuRedis) Del(k string) error {
 	return nil
 }
 
-func (c *AbuRedis) Expire(k string, to int) error {
+func (c *AbuRedis) Del(key string) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	_, err := conn.Do("expire", k, to)
+	_, err := conn.Do("del", key)
 	if err != nil {
 		logs.Error(err.Error())
 		return err
@@ -190,11 +179,10 @@ func (c *AbuRedis) Expire(k string, to int) error {
 	return nil
 }
 
-func (c *AbuRedis) HSet(k string, f string, v interface{}) error {
+func (c *AbuRedis) Expire(key string, expire int) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	output, _ := json.Marshal(&v)
-	_, err := conn.Do("hset", k, f, string(output))
+	_, err := conn.Do("expire", key, expire)
 	if err != nil {
 		logs.Error(err.Error())
 		return err
@@ -202,10 +190,11 @@ func (c *AbuRedis) HSet(k string, f string, v interface{}) error {
 	return nil
 }
 
-func (c *AbuRedis) HSetString(k string, f string, v string) error {
+func (c *AbuRedis) HSet(key string, field string, value interface{}) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	_, err := conn.Do("hset", k, f, v)
+	output, _ := json.Marshal(&value)
+	_, err := conn.Do("hset", key, field, string(output))
 	if err != nil {
 		logs.Error(err.Error())
 		return err
@@ -213,10 +202,21 @@ func (c *AbuRedis) HSetString(k string, f string, v string) error {
 	return nil
 }
 
-func (c *AbuRedis) HGet(k string, f string) interface{} {
+func (c *AbuRedis) HSetString(key string, field string, value string) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("hget", k, f)
+	_, err := conn.Do("hset", key, field, value)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (c *AbuRedis) HGet(key string, field string) interface{} {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("hget", key, field)
 	if err != nil {
 		logs.Error(err.Error())
 		return nil
@@ -224,10 +224,10 @@ func (c *AbuRedis) HGet(k string, f string) interface{} {
 	return ret
 }
 
-func (c *AbuRedis) HDel(k string, f string) error {
+func (c *AbuRedis) HDel(key string, field string) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	_, err := conn.Do("hdel", k, f)
+	_, err := conn.Do("hdel", key, field)
 	if err != nil {
 		logs.Error(err.Error())
 		return nil
@@ -235,10 +235,10 @@ func (c *AbuRedis) HDel(k string, f string) error {
 	return nil
 }
 
-func (c *AbuRedis) HKeys(k string) []string {
+func (c *AbuRedis) HKeys(key string) []string {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	keys, err := conn.Do("hkeys", k)
+	keys, err := conn.Do("hkeys", key)
 	ikeys := keys.([]interface{})
 	strkeys := []string{}
 	if err != nil {
@@ -251,10 +251,10 @@ func (c *AbuRedis) HKeys(k string) []string {
 	return strkeys
 }
 
-func (c *AbuRedis) SAdd(k string, f string) error {
+func (c *AbuRedis) SAdd(key string, field string) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	_, err := conn.Do("sadd", k, f)
+	_, err := conn.Do("sadd", key, field)
 	if err != nil {
 		logs.Error(err.Error())
 		return nil
