@@ -3,6 +3,7 @@ server:
   snowflakeid: 123 #雪花算法节点
   project: x_hash #项目名
   module: adminapi #模块名
+  ipdata: ./config/ipdata.dat #qqwry数据文件地址
   http:
     port: 4134
   token:
