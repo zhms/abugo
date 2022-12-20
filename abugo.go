@@ -1,11 +1,27 @@
 package abugo
 
 import (
+	"bytes"
+	"crypto"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/hmac"
+	"crypto/md5"
+	"crypto/rsa"
+	"crypto/sha1"
+	"crypto/x509"
+	"encoding/base32"
+	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	crand "crypto/rand"
 	mrand "math/rand"
 
 	"github.com/beego/beego/logs"
@@ -217,4 +233,230 @@ func GetIpLocation(ip string) string {
 	} else {
 		return ""
 	}
+}
+
+func GetGoogleCode(secret string) int32 {
+	key, err := base32.StdEncoding.DecodeString(secret)
+	if err != nil {
+		logs.Error(err)
+		return 0
+	}
+	epochSeconds := time.Now().Unix() + 0
+	return int32(abuOneTimePassword(key, abuToBytes(epochSeconds/30)))
+}
+
+func VerifyGoogleCode(secret string, code string) bool {
+	nowcode := GetGoogleCode(secret)
+	if fmt.Sprint(nowcode) == code {
+		return true
+	}
+	return false
+}
+
+func abuOneTimePassword(key []byte, value []byte) uint32 {
+	hmacSha1 := hmac.New(sha1.New, key)
+	hmacSha1.Write(value)
+	hash := hmacSha1.Sum(nil)
+	offset := hash[len(hash)-1] & 0x0F
+	hashParts := hash[offset : offset+4]
+	hashParts[0] = hashParts[0] & 0x7F
+	number := abuToUint32(hashParts)
+	pwd := number % 1000000
+	return pwd
+}
+
+func abuToUint32(bytes []byte) uint32 {
+	return (uint32(bytes[0]) << 24) + (uint32(bytes[1]) << 16) +
+		(uint32(bytes[2]) << 8) + uint32(bytes[3])
+}
+
+func abuToBytes(value int64) []byte {
+	var result []byte
+	mask := int64(0xFF)
+	shifts := [8]uint16{56, 48, 40, 32, 24, 16, 8, 0}
+	for _, shift := range shifts {
+		result = append(result, byte((value>>shift)&mask))
+	}
+	return result
+}
+
+func abuGoogleRandStr(strSize int) string {
+	dictionary := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	var bytes = make([]byte, strSize)
+	_, _ = crand.Read(bytes)
+	for k, v := range bytes {
+		bytes[k] = dictionary[v%byte(len(dictionary))]
+	}
+	return string(bytes)
+}
+
+func NewGoogleSecret() string {
+	return strings.ToUpper(abuGoogleRandStr(32))
+}
+
+func aesPKCS7Padding(ciphertext []byte, blocksize int) []byte {
+	padding := blocksize - len(ciphertext)%blocksize
+	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(ciphertext, padtext...)
+}
+func aesPKCS7UnPadding(origData []byte) []byte {
+	length := len(origData)
+	unpadding := int(origData[length-1])
+	return origData[:(length - unpadding)]
+}
+
+func AesEncrypt(orig string, key string) string {
+	origData := []byte(orig)
+	k := []byte(key)
+	block, erra := aes.NewCipher(k)
+	if erra != nil {
+		logs.Error(erra)
+		return ""
+	}
+	blockSize := block.BlockSize()
+	origData = aesPKCS7Padding(origData, blockSize)
+	blockMode := cipher.NewCBCEncrypter(block, k[:blockSize])
+	cryted := make([]byte, len(origData))
+	blockMode.CryptBlocks(cryted, origData)
+	return base64.StdEncoding.EncodeToString(cryted)
+}
+
+func AesDecrypt(cryted string, key string) string {
+	crytedByte, _ := base64.StdEncoding.DecodeString(cryted)
+	k := []byte(key)
+	block, _ := aes.NewCipher(k)
+	blockSize := block.BlockSize()
+	blockMode := cipher.NewCBCDecrypter(block, k[:blockSize])
+	orig := make([]byte, len(crytedByte))
+	blockMode.CryptBlocks(orig, crytedByte)
+	orig = aesPKCS7UnPadding(orig)
+	return string(orig)
+}
+
+func RsaSign(data interface{}, privatekey string) string {
+	privatekey = strings.Replace(privatekey, "-----BEGIN PRIVATE KEY-----", "", -1)
+	privatekey = strings.Replace(privatekey, "-----END PRIVATE KEY-----", "", -1)
+	privatekey = strings.Replace(privatekey, "-----BEGIN RSA PRIVATE KEY-----", "", -1)
+	privatekey = strings.Replace(privatekey, "-----END RSA PRIVATE KEY-----", "", -1)
+	t := reflect.TypeOf(data)
+	v := reflect.ValueOf(data)
+	keys := []string{}
+	for i := 0; i < t.NumField(); i++ {
+		fn := strings.ToLower(t.Field(i).Name)
+		if fn != "sign" {
+			keys = append(keys, t.Field(i).Name)
+		}
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+	var sb strings.Builder
+	for i := 0; i < len(keys); i++ {
+		switch sv := v.FieldByName(keys[i]).Interface().(type) {
+		case string:
+			sb.WriteString(sv)
+		case int:
+			sb.WriteString(fmt.Sprint(sv))
+		case int8:
+			sb.WriteString(fmt.Sprint(sv))
+		case int16:
+			sb.WriteString(fmt.Sprint(sv))
+		case int32:
+			sb.WriteString(fmt.Sprint(sv))
+		case int64:
+			sb.WriteString(fmt.Sprint(sv))
+		case float32:
+			sb.WriteString(fmt.Sprint(sv))
+		case float64:
+			sb.WriteString(fmt.Sprint(sv))
+		}
+	}
+	privatekeybase64, errb := base64.StdEncoding.DecodeString(privatekey)
+	if errb != nil {
+		logs.Error(errb)
+		return ""
+	}
+	privatekeyx509, errc := x509.ParsePKCS8PrivateKey([]byte(privatekeybase64))
+	if errc != nil {
+		logs.Error(errc)
+		return ""
+	}
+	hashmd5 := md5.Sum([]byte(sb.String()))
+	hashed := hashmd5[:]
+	sign, errd := rsa.SignPKCS1v15(crand.Reader, privatekeyx509.(*rsa.PrivateKey), crypto.MD5, hashed)
+	if errd != nil {
+		logs.Error(errd)
+		return ""
+	}
+	return base64.StdEncoding.EncodeToString(sign)
+}
+
+func RsaVerify(data interface{}, publickey string) bool {
+	publickey = strings.Replace(publickey, "-----BEGIN PUBLIC KEY-----", "", -1)
+	publickey = strings.Replace(publickey, "-----END PUBLIC KEY-----", "", -1)
+	publickey = strings.Replace(publickey, "-----BEGIN RSA PUBLIC KEY-----", "", -1)
+	publickey = strings.Replace(publickey, "-----END RSA PUBLIC KEY-----", "", -1)
+	t := reflect.TypeOf(data)
+	v := reflect.ValueOf(data)
+	keys := []string{}
+	for i := 0; i < t.NumField(); i++ {
+		fn := strings.ToLower(t.Field(i).Name)
+		if fn != "sign" {
+			keys = append(keys, t.Field(i).Name)
+		}
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+	var sb strings.Builder
+	for i := 0; i < len(keys); i++ {
+		switch sv := v.FieldByName(keys[i]).Interface().(type) {
+		case string:
+			sb.WriteString(sv)
+		case int:
+			sb.WriteString(fmt.Sprint(sv))
+		case int8:
+			sb.WriteString(fmt.Sprint(sv))
+		case int16:
+			sb.WriteString(fmt.Sprint(sv))
+		case int32:
+			sb.WriteString(fmt.Sprint(sv))
+		case int64:
+			sb.WriteString(fmt.Sprint(sv))
+		case float32:
+			sb.WriteString(fmt.Sprint(sv))
+		case float64:
+			sb.WriteString(fmt.Sprint(sv))
+		}
+	}
+	signedstr := fmt.Sprint(v.FieldByName("Sign"))
+	publickeybase64, errb := base64.StdEncoding.DecodeString(publickey)
+	if errb != nil {
+		logs.Error(errb)
+		return false
+	}
+	publickeyx509, errc := x509.ParsePKIXPublicKey([]byte(publickeybase64))
+	if errc != nil {
+		logs.Error(errc)
+		return false
+	}
+	hash := md5.New()
+	hash.Write([]byte(sb.String()))
+	signdata, _ := base64.StdEncoding.DecodeString(signedstr)
+	errd := rsa.VerifyPKCS1v15(publickeyx509.(*rsa.PublicKey), crypto.MD5, hash.Sum(nil), signdata)
+	return errd == nil
+}
+
+func ReadAllText(path string) string {
+	file, err := os.Open(path)
+	if err != nil {
+		logs.Error(err)
+		return ""
+	}
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		logs.Error(err)
+		return ""
+	}
+	return string(bytes)
 }
