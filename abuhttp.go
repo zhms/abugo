@@ -14,6 +14,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+type H map[string]any
+
 const (
 	HTTP_SAVE_DATA_KEY                = "http_save_api_data_key"
 	HTTP_RESPONSE_CODE_OK             = 200
