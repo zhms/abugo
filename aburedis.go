@@ -251,10 +251,22 @@ func (c *AbuRedis) HKeys(key string) []string {
 	return strkeys
 }
 
-func (c *AbuRedis) SAdd(key string, field string) error {
+func (c *AbuRedis) SAdd(key string, value interface{}) error {
 	conn := c.redispool.Get()
 	defer conn.Close()
-	_, err := conn.Do("sadd", key, field)
+	output, _ := json.Marshal(&value)
+	_, err := conn.Do("sadd", key, string(output))
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	return nil
+}
+
+func (c *AbuRedis) SAddString(key string, value string) error {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("sadd", key, value)
 	if err != nil {
 		logs.Error(err.Error())
 		return nil
