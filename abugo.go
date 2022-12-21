@@ -333,44 +333,11 @@ func AesDecrypt(cryted string, key string) string {
 	return string(orig)
 }
 
-func RsaSign(data interface{}, privatekey string) string {
+func RsaSign(strdata string, privatekey string) string {
 	privatekey = strings.Replace(privatekey, "-----BEGIN PRIVATE KEY-----", "", -1)
 	privatekey = strings.Replace(privatekey, "-----END PRIVATE KEY-----", "", -1)
 	privatekey = strings.Replace(privatekey, "-----BEGIN RSA PRIVATE KEY-----", "", -1)
 	privatekey = strings.Replace(privatekey, "-----END RSA PRIVATE KEY-----", "", -1)
-	t := reflect.TypeOf(data)
-	v := reflect.ValueOf(data)
-	keys := []string{}
-	for i := 0; i < t.NumField(); i++ {
-		fn := strings.ToLower(t.Field(i).Name)
-		if fn != "sign" {
-			keys = append(keys, t.Field(i).Name)
-		}
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
-	var sb strings.Builder
-	for i := 0; i < len(keys); i++ {
-		switch sv := v.FieldByName(keys[i]).Interface().(type) {
-		case string:
-			sb.WriteString(sv)
-		case int:
-			sb.WriteString(fmt.Sprint(sv))
-		case int8:
-			sb.WriteString(fmt.Sprint(sv))
-		case int16:
-			sb.WriteString(fmt.Sprint(sv))
-		case int32:
-			sb.WriteString(fmt.Sprint(sv))
-		case int64:
-			sb.WriteString(fmt.Sprint(sv))
-		case float32:
-			sb.WriteString(fmt.Sprint(sv))
-		case float64:
-			sb.WriteString(fmt.Sprint(sv))
-		}
-	}
 	privatekeybase64, errb := base64.StdEncoding.DecodeString(privatekey)
 	if errb != nil {
 		logs.Error(errb)
@@ -381,7 +348,7 @@ func RsaSign(data interface{}, privatekey string) string {
 		logs.Error(errc)
 		return ""
 	}
-	hashmd5 := md5.Sum([]byte(sb.String()))
+	hashmd5 := md5.Sum([]byte(strdata))
 	hashed := hashmd5[:]
 	sign, errd := rsa.SignPKCS1v15(crand.Reader, privatekeyx509.(*rsa.PrivateKey), crypto.MD5, hashed)
 	if errd != nil {
@@ -391,45 +358,11 @@ func RsaSign(data interface{}, privatekey string) string {
 	return base64.StdEncoding.EncodeToString(sign)
 }
 
-func RsaVerify(data interface{}, publickey string) bool {
+func RsaVerify(strdata string, strsign string, publickey string) bool {
 	publickey = strings.Replace(publickey, "-----BEGIN PUBLIC KEY-----", "", -1)
 	publickey = strings.Replace(publickey, "-----END PUBLIC KEY-----", "", -1)
 	publickey = strings.Replace(publickey, "-----BEGIN RSA PUBLIC KEY-----", "", -1)
 	publickey = strings.Replace(publickey, "-----END RSA PUBLIC KEY-----", "", -1)
-	t := reflect.TypeOf(data)
-	v := reflect.ValueOf(data)
-	keys := []string{}
-	for i := 0; i < t.NumField(); i++ {
-		fn := strings.ToLower(t.Field(i).Name)
-		if fn != "sign" {
-			keys = append(keys, t.Field(i).Name)
-		}
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
-	var sb strings.Builder
-	for i := 0; i < len(keys); i++ {
-		switch sv := v.FieldByName(keys[i]).Interface().(type) {
-		case string:
-			sb.WriteString(sv)
-		case int:
-			sb.WriteString(fmt.Sprint(sv))
-		case int8:
-			sb.WriteString(fmt.Sprint(sv))
-		case int16:
-			sb.WriteString(fmt.Sprint(sv))
-		case int32:
-			sb.WriteString(fmt.Sprint(sv))
-		case int64:
-			sb.WriteString(fmt.Sprint(sv))
-		case float32:
-			sb.WriteString(fmt.Sprint(sv))
-		case float64:
-			sb.WriteString(fmt.Sprint(sv))
-		}
-	}
-	signedstr := fmt.Sprint(v.FieldByName("Sign"))
 	publickeybase64, errb := base64.StdEncoding.DecodeString(publickey)
 	if errb != nil {
 		logs.Error(errb)
@@ -441,8 +374,8 @@ func RsaVerify(data interface{}, publickey string) bool {
 		return false
 	}
 	hash := md5.New()
-	hash.Write([]byte(sb.String()))
-	signdata, _ := base64.StdEncoding.DecodeString(signedstr)
+	hash.Write([]byte(strdata))
+	signdata, _ := base64.StdEncoding.DecodeString(strsign)
 	errd := rsa.VerifyPKCS1v15(publickeyx509.(*rsa.PublicKey), crypto.MD5, hash.Sum(nil), signdata)
 	return errd == nil
 }
@@ -459,4 +392,81 @@ func ReadAllText(path string) string {
 		return ""
 	}
 	return string(bytes)
+}
+
+func SerialObject_v1(data interface{}) string {
+	sb := strings.Builder{}
+	t := reflect.TypeOf(data)
+	v := reflect.ValueOf(data)
+	keys := []string{}
+	for i := 0; i < t.NumField(); i++ {
+		fn := strings.ToLower(t.Field(i).Name)
+		if fn != "sign" {
+			keys = append(keys, t.Field(i).Name)
+		}
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+	for i := 0; i < len(keys); i++ {
+		tag, _ := t.FieldByName(keys[i])
+		fieldtype := tag.Tag.Get("type")
+		fieldname := tag.Tag.Get("name")
+		if fieldname == "" {
+			fieldname = keys[i]
+		}
+		if fieldtype == "object" {
+
+		} else if fieldtype == "array" {
+
+		} else {
+			switch sv := v.FieldByName(keys[i]).Interface().(type) {
+			case string:
+				sb.WriteString(fieldname)
+				sb.WriteString("=")
+				sb.WriteString(sv)
+				sb.WriteString("&")
+			case int:
+				sb.WriteString(fieldname)
+				sb.WriteString("=")
+				sb.WriteString(fmt.Sprint(sv))
+				sb.WriteString("&")
+			case int8:
+				sb.WriteString(fieldname)
+				sb.WriteString("=")
+				sb.WriteString(fmt.Sprint(sv))
+				sb.WriteString("&")
+			case int16:
+				sb.WriteString(fieldname)
+				sb.WriteString("=")
+				sb.WriteString(fmt.Sprint(sv))
+				sb.WriteString("&")
+			case int32:
+				sb.WriteString(fieldname)
+				sb.WriteString("=")
+				sb.WriteString(fmt.Sprint(sv))
+				sb.WriteString("&")
+			case int64:
+				sb.WriteString(fieldname)
+				sb.WriteString("=")
+				sb.WriteString(fmt.Sprint(sv))
+				sb.WriteString("&")
+			case float32:
+				sb.WriteString(fieldname)
+				sb.WriteString("=")
+				sb.WriteString(fmt.Sprint(sv))
+				sb.WriteString("&")
+			case float64:
+				sb.WriteString(fieldname)
+				sb.WriteString("=")
+				sb.WriteString(fmt.Sprint(sv))
+				sb.WriteString("&")
+			}
+		}
+	}
+	str := sb.String()
+	if len(str) > 0 {
+		str = str[0 : len(str)-1]
+	}
+	return str
 }
