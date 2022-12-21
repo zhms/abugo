@@ -31,6 +31,7 @@ import (
 )
 
 var ipdata string
+var keyprefix string
 
 func Init() {
 	mrand.Seed(time.Now().Unix())
@@ -53,6 +54,9 @@ func Init() {
 		NewIdWorker(nodeid)
 	}
 	ipdata = GetConfigString("server.ipdata", false, "")
+	project := GetConfigString("server.project", true, "")
+	module := GetConfigString("server.module", true, "")
+	keyprefix = fmt.Sprint(project, ":", module, ":")
 }
 
 func Run() {
@@ -470,4 +474,8 @@ func SerialObject_v1(data interface{}, order string) string {
 		str = str[0 : len(str)-1]
 	}
 	return str
+}
+
+func KeyPrefix() string {
+	return keyprefix
 }

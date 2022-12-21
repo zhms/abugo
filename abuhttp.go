@@ -89,11 +89,6 @@ type AbuHttp struct {
 	msg_callback     sync.Map
 }
 
-type AbuHttpGropu struct {
-	http *AbuHttp
-	name string
-}
-
 type AbuDbError struct {
 	ErrCode int    `json:"errcode"`
 	ErrMsg  string `json:"errmsg"`
@@ -101,26 +96,6 @@ type AbuDbError struct {
 
 func (c *AbuHttp) Static(relativePaths string, root string) {
 	c.gin.Static(relativePaths, root)
-}
-
-func (c *AbuHttp) NewGroup(path string) *AbuHttpGropu {
-	return &AbuHttpGropu{c, path}
-}
-
-func (c *AbuHttpGropu) Get(path string, handlers ...AbuHttpHandler) {
-	c.http.Get(fmt.Sprint(c.name, path), handlers...)
-}
-
-func (c *AbuHttpGropu) GetNoAuth(path string, handlers ...AbuHttpHandler) {
-	c.http.GetNoAuth(fmt.Sprint(c.name, path), handlers...)
-}
-
-func (c *AbuHttpGropu) Post(path string, handlers ...AbuHttpHandler) {
-	c.http.Post(fmt.Sprint(c.name, path), handlers...)
-}
-
-func (c *AbuHttpGropu) PostNoAuth(path string, handlers ...AbuHttpHandler) {
-	c.http.PostNoAuth(fmt.Sprint(c.name, path), handlers...)
 }
 
 func (ctx *AbuHttpContent) Put(key string, value interface{}) {
