@@ -418,58 +418,51 @@ func SerialObject_v1(data interface{}, order string) string {
 	}
 	for i := 0; i < len(keys); i++ {
 		tag, _ := t.FieldByName(keys[i])
-		fieldtype := tag.Tag.Get("type")
 		fieldname := tag.Tag.Get("name")
 		if fieldname == "" {
 			fieldname = keys[i]
 		}
-		if fieldtype == "object" {
-
-		} else if fieldtype == "array" {
-
-		} else {
-			switch sv := v.FieldByName(keys[i]).Interface().(type) {
-			case string:
-				sb.WriteString(fieldname)
-				sb.WriteString("=")
-				sb.WriteString(sv)
-				sb.WriteString("&")
-			case int:
-				sb.WriteString(fieldname)
-				sb.WriteString("=")
-				sb.WriteString(fmt.Sprint(sv))
-				sb.WriteString("&")
-			case int8:
-				sb.WriteString(fieldname)
-				sb.WriteString("=")
-				sb.WriteString(fmt.Sprint(sv))
-				sb.WriteString("&")
-			case int16:
-				sb.WriteString(fieldname)
-				sb.WriteString("=")
-				sb.WriteString(fmt.Sprint(sv))
-				sb.WriteString("&")
-			case int32:
-				sb.WriteString(fieldname)
-				sb.WriteString("=")
-				sb.WriteString(fmt.Sprint(sv))
-				sb.WriteString("&")
-			case int64:
-				sb.WriteString(fieldname)
-				sb.WriteString("=")
-				sb.WriteString(fmt.Sprint(sv))
-				sb.WriteString("&")
-			case float32:
-				sb.WriteString(fieldname)
-				sb.WriteString("=")
-				sb.WriteString(fmt.Sprint(sv))
-				sb.WriteString("&")
-			case float64:
-				sb.WriteString(fieldname)
-				sb.WriteString("=")
-				sb.WriteString(fmt.Sprint(sv))
-				sb.WriteString("&")
-			}
+		switch sv := v.FieldByName(keys[i]).Interface().(type) {
+		case string:
+			sb.WriteString(fieldname)
+			sb.WriteString("=")
+			sb.WriteString(sv)
+			sb.WriteString("&")
+		case int:
+			sb.WriteString(fieldname)
+			sb.WriteString("=")
+			sb.WriteString(fmt.Sprint(sv))
+			sb.WriteString("&")
+		case int8:
+			sb.WriteString(fieldname)
+			sb.WriteString("=")
+			sb.WriteString(fmt.Sprint(sv))
+			sb.WriteString("&")
+		case int16:
+			sb.WriteString(fieldname)
+			sb.WriteString("=")
+			sb.WriteString(fmt.Sprint(sv))
+			sb.WriteString("&")
+		case int32:
+			sb.WriteString(fieldname)
+			sb.WriteString("=")
+			sb.WriteString(fmt.Sprint(sv))
+			sb.WriteString("&")
+		case int64:
+			sb.WriteString(fieldname)
+			sb.WriteString("=")
+			sb.WriteString(fmt.Sprint(sv))
+			sb.WriteString("&")
+		case float32:
+			sb.WriteString(fieldname)
+			sb.WriteString("=")
+			sb.WriteString(fmt.Sprint(sv))
+			sb.WriteString("&")
+		case float64:
+			sb.WriteString(fieldname)
+			sb.WriteString("=")
+			sb.WriteString(fmt.Sprint(sv))
+			sb.WriteString("&")
 		}
 	}
 	str := sb.String()
