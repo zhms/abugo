@@ -394,7 +394,8 @@ func ReadAllText(path string) string {
 	return string(bytes)
 }
 
-func SerialObject_v1(data interface{}) string {
+//order 排序, asc 升序,desc降序
+func SerialObject_v1(data interface{}, order string) string {
 	sb := strings.Builder{}
 	t := reflect.TypeOf(data)
 	v := reflect.ValueOf(data)
@@ -405,9 +406,16 @@ func SerialObject_v1(data interface{}) string {
 			keys = append(keys, t.Field(i).Name)
 		}
 	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
+	if strings.ToLower(order) == "asc" {
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i] < keys[j]
+		})
+	}
+	if strings.ToLower(order) == "desc" {
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i] > keys[j]
+		})
+	}
 	for i := 0; i < len(keys); i++ {
 		tag, _ := t.FieldByName(keys[i])
 		fieldtype := tag.Tag.Get("type")
