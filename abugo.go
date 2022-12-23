@@ -34,6 +34,7 @@ var ipdata string
 var keyprefix string
 var project string
 var module string
+var env string
 
 func Init() {
 	mrand.Seed(time.Now().Unix())
@@ -58,6 +59,7 @@ func Init() {
 	ipdata = GetConfigString("server.ipdata", false, "")
 	project = GetConfigString("server.project", true, "")
 	module = GetConfigString("server.module", true, "")
+	env = GetConfigString("server.env", true, "")
 	keyprefix = fmt.Sprint(project, ":", module, ":")
 }
 
@@ -488,4 +490,8 @@ func Project() string {
 
 func Module() string {
 	return module
+}
+
+func Env() string {
+	return env
 }
