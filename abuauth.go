@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func AuthInit(db AbuDb, fullauth string) {
+func AuthInit(db *AbuDb, fullauth string) {
 	jdata := map[string]interface{}{}
 	json.Unmarshal([]byte(fullauth), &jdata)
 	xitong := jdata["系统管理"].(map[string]interface{})
