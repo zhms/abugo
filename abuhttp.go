@@ -311,6 +311,9 @@ func (c *AbuHttp) DelToken(key string) {
 	if c.token == nil {
 		return
 	}
+	if key == "" {
+		return
+	}
 	c.token.Del(fmt.Sprint(c.tokenrefix, ":", key))
 }
 
