@@ -126,6 +126,10 @@ func (ctx *AbuHttpContent) RespOK(objects ...interface{}) {
 	ctx.gin.JSON(http.StatusOK, resp)
 }
 
+func (ctx *AbuHttpContent) RespJson(obj any) {
+	ctx.gin.JSON(http.StatusOK, obj)
+}
+
 func (ctx *AbuHttpContent) RespFile(savename string, filepath string) {
 	ctx.gin.Header("Content-Disposition", fmt.Sprintf("attachment;filename=%s.xls", savename))
 	ctx.gin.File(filepath)
