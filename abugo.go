@@ -12,6 +12,7 @@ import (
 	"crypto/x509"
 	"encoding/base32"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -494,4 +495,10 @@ func Module() string {
 
 func Env() string {
 	return env
+}
+
+func Md5(str string) string {
+	h := md5.New()
+	h.Write([]byte(str))
+	return hex.EncodeToString(h.Sum(nil))
 }
