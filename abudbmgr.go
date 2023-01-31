@@ -96,7 +96,7 @@ func (c *AbuDb) CallProcedure(procname string, args ...interface{}) (*map[string
 		for i := range fields {
 			if scans[i] != nil {
 				typename := ct[i].DatabaseTypeName()
-				if typename == "INT" || typename == "BIGINT" || typename == "TINYINT" {
+				if typename == "INT" || typename == "BIGINT" || typename == "TINYINT" || typename == "UNSIGNED BIGINT" {
 					if reflect.TypeOf(scans[i]).Name() == "" {
 						v, _ := strconv.ParseInt(string(scans[i].([]uint8)), 10, 64)
 						data[fields[i]] = v
