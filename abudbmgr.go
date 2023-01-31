@@ -3,6 +3,9 @@ package abugo
 import (
 	"database/sql"
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/beego/beego/logs"
@@ -62,4 +65,61 @@ func (c *AbuDb) Gorm() *gorm.DB {
 func (c *AbuDb) Table(tablename string) *AbuDbTable {
 	dbtable := AbuDbTable{tablename: tablename, selectstr: "*", db: c}
 	return &dbtable
+}
+
+func (c *AbuDb) CallProcedure(procname string, args ...interface{}) (*map[string]interface{}, error) {
+	sql := ""
+	for i := 0; i < len(args); i++ {
+		sql += "?,"
+	}
+	if len(sql) > 0 {
+		sql = strings.TrimRight(sql, ",")
+	}
+	sql = fmt.Sprintf("call %s(%s)", procname, sql)
+
+	dbresult, err := c.db.DB().Query(sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	if dbresult.Next() {
+		data := make(map[string]interface{})
+		fields, _ := dbresult.Columns()
+		scans := make([]interface{}, len(fields))
+		for i := range scans {
+			scans[i] = &scans[i]
+		}
+		err := dbresult.Scan(scans...)
+		if err != nil {
+			return nil, err
+		}
+		ct, _ := dbresult.ColumnTypes()
+		for i := range fields {
+			if scans[i] != nil {
+				typename := ct[i].DatabaseTypeName()
+				if typename == "INT" || typename == "BIGINT" || typename == "TINYINT" {
+					if reflect.TypeOf(scans[i]).Name() == "" {
+						v, _ := strconv.ParseInt(string(scans[i].([]uint8)), 10, 64)
+						data[fields[i]] = v
+					} else {
+						data[fields[i]] = scans[i]
+					}
+				} else if typename == "DOUBLE" || typename == "DECIMAL" {
+					if reflect.TypeOf(scans[i]).Name() == "" {
+						v, _ := strconv.ParseFloat(string(scans[i].([]uint8)), 64)
+						data[fields[i]] = v
+					} else {
+						data[fields[i]] = scans[i]
+					}
+				} else {
+					data[fields[i]] = string(scans[i].([]uint8))
+				}
+			} else {
+				data[fields[i]] = nil
+			}
+		}
+		dbresult.Close()
+		return &data, nil
+	}
+	dbresult.Close()
+	return nil, nil
 }
