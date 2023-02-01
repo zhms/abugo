@@ -403,7 +403,7 @@ func ReadAllText(path string) string {
 	return string(bytes)
 }
 
-//order 排序, asc 升序,desc降序
+// order 排序, asc 升序,desc降序
 func SerialObject_v1(data interface{}, order string) string {
 	sb := strings.Builder{}
 	t := reflect.TypeOf(data)
@@ -501,4 +501,13 @@ func Md5(str string) string {
 	h := md5.New()
 	h.Write([]byte(str))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func TimeStampToLocalDate(tvalue int64) string {
+	if tvalue == 0 {
+		return ""
+	}
+	tm := time.Unix(tvalue/1000, 0)
+	tstr := tm.Format("2006-01-02")
+	return strings.Split(tstr, " ")[0]
 }
