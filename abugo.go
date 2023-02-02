@@ -511,3 +511,34 @@ func TimeStampToLocalDate(tvalue int64) string {
 	tstr := tm.Format("2006-01-02")
 	return strings.Split(tstr, " ")[0]
 }
+
+func LocalDateToTimeStamp(timestr string) int64 {
+	t, _ := time.ParseInLocation("2006-01-02", timestr, time.Local)
+	return t.Local().Unix()
+}
+
+func TimeStampToLocalTime(tvalue int64) string {
+	if tvalue == 0 {
+		return ""
+	}
+	tm := time.Unix(tvalue/1000, 0)
+	tstr := tm.Format("2006-01-02 15:04:05")
+	return tstr
+}
+
+func LocalTimeToTimeStamp(timestr string) int64 {
+	t, _ := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
+	return t.Local().Unix()
+}
+
+func GetUtcTimeStamp(timestr string) string {
+	if len(timestr) == 0 {
+		return timestr
+	}
+	if len(timestr) == 10 {
+		timestr = timestr + " 00:00:00"
+	}
+	t, _ := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
+	r := t.UTC().Format("2006-01-02T15:04:05Z")
+	return r
+}
