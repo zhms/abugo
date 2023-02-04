@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -273,4 +274,144 @@ func (c *AbuRedis) SAddString(key string, value string) error {
 	}
 	return nil
 }
+func (c *AbuRedis) HSetObject(key string, object map[string]interface{}) error {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	params := []interface{}{}
+	params = append(params, key)
+	for k, v := range object {
+		if v == nil {
+			continue
+		}
+		params = append(params, k)
+		typename := reflect.TypeOf(v).Name()
+		if strings.Contains(typename, "int") {
+			params = append(params, fmt.Sprintf("%d", v))
+		} else if strings.Contains(typename, "float") {
+			params = append(params, fmt.Sprintf("%f", v))
+		} else {
+			params = append(params, fmt.Sprint(v))
+		}
+	}
+	_, err := conn.Do("hmset", params...)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	return nil
+}
 
+func (c *AbuRedis) HGetAll(key string) *map[string]interface{} {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("hgetall", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	arrret := ret.([]interface{})
+	if len(arrret) == 0 {
+		return nil
+	}
+	mapret := map[string]interface{}{}
+	for i := 0; i < len(arrret); i++ {
+		if i%2 == 0 {
+			mapret[string(arrret[i].([]byte))] = string(arrret[i+1].([]byte))
+		}
+	}
+	return &mapret
+}
+
+func (c *AbuRedis) RPush(key string, vals ...interface{}) error {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	data := []interface{}{}
+	data = append(data, key)
+	data = append(data, vals...)
+	_, err := conn.Do("rpush", data...)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	return nil
+}
+
+func (c *AbuRedis) LIndex(key string, idx int) interface{} {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("lindex", key, idx)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	return ret
+}
+
+func (c *AbuRedis) BLPop(key string, timeout int) interface{} {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("blpop", key, timeout)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	if ret == nil {
+		return nil
+	}
+	arr := ret.([]interface{})
+	return string(arr[1].([]byte))
+}
+
+func (c *AbuRedis) SMembers(key string) []interface{} {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("smembers", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return []interface{}{}
+	}
+	if ret == nil {
+		return []interface{}{}
+	}
+	arr := ret.([]interface{})
+	return arr
+}
+
+func (c *AbuRedis) HMGet(key string, fields ...interface{}) *map[string]interface{} {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	data := []interface{}{}
+	data = append(data, key)
+	data = append(data, fields...)
+	ret, err := conn.Do("hmget", data...)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	arrret := ret.([]interface{})
+	if len(arrret) == 0 {
+		return nil
+	}
+	mapret := map[string]interface{}{}
+	for i := 0; i < len(fields); i++ {
+		field := fields[i]
+		if arrret[i] != nil {
+			mapret[field.(string)] = string(arrret[i].([]byte))
+		}
+	}
+	return &mapret
+}
+
+func (c *AbuRedis) SRem(key string, vals ...interface{}) []interface{} {
+	conn := c.redispool.Get()
+	defer conn.Close()
+	data := []interface{}{}
+	data = append(data, key)
+	data = append(data, vals...)
+	_, err := conn.Do("srem", data...)
+	if err != nil {
+		logs.Error(err.Error())
+		return []interface{}{}
+	}
+	return nil
+}
