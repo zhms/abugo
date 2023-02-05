@@ -228,8 +228,11 @@ func (c *AbuHttp) Init(cfgkey string) {
 			return true
 		},
 	}
-	c.GetNoAuth("/api/ws", c.ws)
 	logs.Debug("http listen:", port)
+}
+
+func (c *AbuHttp) InitWs(url string) {
+	c.GetNoAuth(url, c.ws)
 }
 
 func (c *AbuHttp) Get(path string, handlers ...AbuHttpHandler) {
