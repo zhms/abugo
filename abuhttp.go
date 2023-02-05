@@ -321,6 +321,13 @@ func (c *AbuHttp) DelToken(key string) {
 	c.token.Del(fmt.Sprint(c.tokenrefix, ":", key))
 }
 
+func (c *AbuHttp) GetToken(key string) interface{} {
+	if c.token == nil {
+		return nil
+	}
+	return c.token.Get(fmt.Sprint(c.tokenrefix, ":", key))
+}
+
 func (c *AbuHttp) RenewToken(key string) {
 	if c.token == nil {
 		return
