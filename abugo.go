@@ -66,11 +66,11 @@ func Init() {
 	module = GetConfigString("server.module", true, "")
 	env = GetConfigString("server.env", true, "")
 	keyprefix = fmt.Sprint(project, ":", module, ":")
-	game_thread = make(chan GameCallback)
+	game_thread = make(chan GameCallback, 100000)
 	go func() {
 		for {
 			v, ok := <-game_thread
-			if !ok {
+			if ok {
 				v()
 			}
 		}
