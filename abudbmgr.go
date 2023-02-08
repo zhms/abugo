@@ -123,3 +123,55 @@ func (c *AbuDb) CallProcedure(procname string, args ...interface{}) (*map[string
 	dbresult.Close()
 	return nil, nil
 }
+
+func (c *AbuDb) getone(rows *sql.Rows) *map[string]interface{} {
+	data := make(map[string]interface{})
+	fields, _ := rows.Columns()
+	scans := make([]interface{}, len(fields))
+	for i := range scans {
+		scans[i] = &scans[i]
+	}
+	err := rows.Scan(scans...)
+	if err != nil {
+		logs.Error(err)
+		return nil
+	}
+	ct, _ := rows.ColumnTypes()
+	for i := range fields {
+		if scans[i] != nil {
+			typename := ct[i].DatabaseTypeName()
+			if typename == "INT" || typename == "BIGINT" || typename == "TINYINT" {
+				if reflect.TypeOf(scans[i]).Name() == "" {
+					v, _ := strconv.ParseInt(string(scans[i].([]uint8)), 10, 64)
+					data[fields[i]] = v
+				} else {
+					data[fields[i]] = scans[i]
+				}
+			} else if typename == "DOUBLE" || typename == "DECIMAL" {
+				if reflect.TypeOf(scans[i]).Name() == "" {
+					v, _ := strconv.ParseFloat(string(scans[i].([]uint8)), 64)
+					data[fields[i]] = v
+				} else {
+					data[fields[i]] = scans[i]
+				}
+			} else {
+				data[fields[i]] = string(scans[i].([]uint8))
+			}
+		} else {
+			data[fields[i]] = nil
+		}
+	}
+	return &data
+}
+
+func (c *AbuDb) getResult(rows *sql.Rows) *[]map[string]interface{} {
+	if rows == nil {
+		return nil
+	}
+	data := []map[string]interface{}{}
+	for rows.Next() {
+		data = append(data, *c.getone(rows))
+	}
+	rows.Close()
+	return &data
+}
