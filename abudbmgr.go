@@ -164,7 +164,7 @@ func (c *AbuDb) getone(rows *sql.Rows) *map[string]interface{} {
 	return &data
 }
 
-func (c *AbuDb) getResult(rows *sql.Rows) *[]map[string]interface{} {
+func (c *AbuDb) GetResult(rows *sql.Rows) *[]map[string]interface{} {
 	if rows == nil {
 		return nil
 	}
