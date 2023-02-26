@@ -1,0 +1,2 @@
+# abugo
+go
