@@ -302,18 +302,14 @@ func abuToBytes(value int64) []byte {
 	return result
 }
 
-func abuGoogleRandStr(strSize int) string {
+func NewGoogleSecret() string {
 	dictionary := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	var bytes = make([]byte, strSize)
+	var bytes = make([]byte, 32)
 	_, _ = crand.Read(bytes)
 	for k, v := range bytes {
 		bytes[k] = dictionary[v%byte(len(dictionary))]
 	}
-	return string(bytes)
-}
-
-func NewGoogleSecret() string {
-	return strings.ToUpper(abuGoogleRandStr(32))
+	return strings.ToUpper(string(bytes))
 }
 
 func aesPKCS7Padding(ciphertext []byte, blocksize int) []byte {
