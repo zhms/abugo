@@ -29,6 +29,7 @@ func (c *GameServer) Init(http *AbuHttp, db *AbuDb, redis *AbuRedis) {
 	c.redis = redis
 	c.http = http
 	c.game_thread = make(chan GameCallback, 100000)
+	http.WsDefaultMsgCallback(c.default_msg_callback)
 	http.WsAddCloseCallback(c.onwsclose)
 	go func() {
 		for {
