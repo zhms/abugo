@@ -373,6 +373,10 @@ func (c *AbuHttp) ws(ctx *AbuHttpContent) {
 			if cbok {
 				cb := callback.(AbuWsMsgCallback)
 				cb(id, md.Data)
+			} else {
+				if c.default_msg_callback != nil {
+					c.default_msg_callback(id, md.MsgId, md.Data)
+				}
 			}
 		}
 	}
@@ -432,47 +436,4 @@ func (c *AbuHttp) WsDefaultMsgCallback(callback AbuWsDefaultMsgCallback) {
 
 func (c *AbuHttp) WsAddCloseCallback(callback AbuWsCallback) {
 	c.close_callback = callback
-}
-
-func (c *AbuHttp) WsConnect(host string, callback AbuWsCallback) {
-	go func() {
-		conn, _, err := websocket.DefaultDialer.Dial(host, nil)
-		if err != nil {
-			callback(0)
-			return
-		}
-		defer conn.Close()
-		id := AbuId()
-		c.idx_conn.Store(id, conn)
-		c.conn_idx.Store(conn, id)
-		callback(id)
-		for {
-			mt, message, err := conn.ReadMessage()
-			c.msgtype.Store(id, mt)
-			if err != nil {
-				break
-			}
-			md := abumsgdata{}
-			err = json.Unmarshal(message, &md)
-			if err == nil {
-				callback, cbok := c.msg_callback.Load(md.MsgId)
-				if cbok {
-					cb := callback.(AbuWsMsgCallback)
-					cb(id, md.Data)
-				} else {
-					if c.default_msg_callback != nil {
-						c.default_msg_callback(id, md.MsgId, md.Data)
-					}
-				}
-			}
-		}
-		_, ccerr := c.idx_conn.Load(id)
-		if ccerr {
-			c.idx_conn.Delete(id)
-			c.conn_idx.Delete(conn)
-			if c.close_callback != nil {
-				c.close_callback(id)
-			}
-		}
-	}()
 }
