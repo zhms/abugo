@@ -80,13 +80,14 @@ type AbuHttp struct {
 	tokenrefix    string
 	tokenlifetime int
 
-	upgrader         websocket.Upgrader
-	idx_conn         sync.Map
-	conn_idx         sync.Map
-	connect_callback AbuWsCallback
-	close_callback   AbuWsCallback
-	msgtype          sync.Map
-	msg_callback     sync.Map
+	upgrader             websocket.Upgrader
+	idx_conn             sync.Map
+	conn_idx             sync.Map
+	connect_callback     AbuWsCallback
+	close_callback       AbuWsCallback
+	msgtype              sync.Map
+	msg_callback         sync.Map
+	default_msg_callback AbuWsDefaultMsgCallback
 }
 
 type AbuDbError struct {
@@ -340,6 +341,7 @@ func (c *AbuHttp) RenewToken(key string) {
 
 type AbuWsCallback func(int64)
 type AbuWsMsgCallback func(int64, interface{})
+type AbuWsDefaultMsgCallback func(int64, string, interface{})
 type abumsgdata struct {
 	MsgId string      `json:"msgid"`
 	Data  interface{} `json:"data"`
@@ -424,6 +426,10 @@ func (c *AbuHttp) WsAddMsgCallback(msgid string, callback AbuWsMsgCallback) {
 	c.msg_callback.Store(msgid, callback)
 }
 
+func (c *AbuHttp) WsDefaultMsgCallback(callback AbuWsDefaultMsgCallback) {
+	c.default_msg_callback = callback
+}
+
 func (c *AbuHttp) WsAddCloseCallback(callback AbuWsCallback) {
 	c.close_callback = callback
 }
@@ -453,6 +459,10 @@ func (c *AbuHttp) WsConnect(host string, callback AbuWsCallback) {
 				if cbok {
 					cb := callback.(AbuWsMsgCallback)
 					cb(id, md.Data)
+				} else {
+					if c.default_msg_callback != nil {
+						c.default_msg_callback(id, md.MsgId, md.Data)
+					}
 				}
 			}
 		}
