@@ -1,2 +1,2 @@
 # abugo
-go
+go framework
