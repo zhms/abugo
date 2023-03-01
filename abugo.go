@@ -53,10 +53,6 @@ var project string
 var module string
 var env string
 
-type GameCallback func()
-
-var game_thread chan GameCallback
-
 func Init() {
 	mrand.Seed(time.Now().Unix())
 	gin.SetMode(gin.ReleaseMode)
@@ -82,15 +78,6 @@ func Init() {
 	module = GetConfigString("server.module", true, "")
 	env = GetConfigString("server.env", true, "")
 	keyprefix = fmt.Sprint(project, ":", module, ":")
-	game_thread = make(chan GameCallback, 100000)
-	go func() {
-		for {
-			v, ok := <-game_thread
-			if ok {
-				v()
-			}
-		}
-	}()
 }
 
 func Run() {
@@ -566,8 +553,4 @@ func GetUtcTimeStamp(timestr string) string {
 	t, _ := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
 	r := t.UTC().Format("2006-01-02T15:04:05Z")
 	return r
-}
-
-func Game(cb GameCallback) {
-	game_thread <- cb
 }
