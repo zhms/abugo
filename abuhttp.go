@@ -407,6 +407,7 @@ func (c *AbuHttp) WsSendMsg(id int64, msgid string, data interface{}) {
 	if jerr == nil {
 		werr := conn.WriteMessage(mt, msgbyte)
 		if werr != nil {
+			logs.Error(werr)
 		}
 	}
 }
