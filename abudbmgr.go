@@ -58,10 +58,6 @@ func (c *AbuDb) Conn() *sql.DB {
 	return c.db.DB()
 }
 
-func (c *AbuDb) Gorm() *gorm.DB {
-	return c.db
-}
-
 func (c *AbuDb) Table(tablename string) *AbuDbTable {
 	dbtable := AbuDbTable{tablename: tablename, selectstr: "*", db: c}
 	return &dbtable
@@ -124,6 +120,18 @@ func (c *AbuDb) CallProcedure(procname string, args ...interface{}) (*map[string
 	return nil, nil
 }
 
+func (c *AbuDb) GetResult(rows *sql.Rows) *[]map[string]interface{} {
+	if rows == nil {
+		return nil
+	}
+	data := []map[string]interface{}{}
+	for rows.Next() {
+		data = append(data, *c.getone(rows))
+	}
+	rows.Close()
+	return &data
+}
+
 func (c *AbuDb) getone(rows *sql.Rows) *map[string]interface{} {
 	data := make(map[string]interface{})
 	fields, _ := rows.Columns()
@@ -161,17 +169,5 @@ func (c *AbuDb) getone(rows *sql.Rows) *map[string]interface{} {
 			data[fields[i]] = nil
 		}
 	}
-	return &data
-}
-
-func (c *AbuDb) GetResult(rows *sql.Rows) *[]map[string]interface{} {
-	if rows == nil {
-		return nil
-	}
-	data := []map[string]interface{}{}
-	for rows.Next() {
-		data = append(data, *c.getone(rows))
-	}
-	rows.Close()
 	return &data
 }
