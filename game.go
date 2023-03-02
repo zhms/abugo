@@ -36,10 +36,9 @@ type GameServer struct {
 	db                *AbuDb
 	redis             *AbuRedis
 	http              *AbuHttp
-	msgcallbacks      map[string]GameMsgCallback
+	msgcallbacks      sync.Map
 	usercomecallback  GameUserComeCallback
 	userleavecallback GameUserLeaveCallback
-	lock              sync.Mutex
 	user_conn         sync.Map
 	conn_user         sync.Map
 	gameid            int
@@ -59,8 +58,6 @@ func (c *GameServer) Init() {
 	c.http = new(AbuHttp)
 	c.http.Init("server.http")
 	c.http.InitWs("/capi/ws")
-
-	c.lock = sync.Mutex{}
 
 	c.gameid = viper.GetInt("server.gameid")
 	c.roomlevel = viper.GetInt("server.roomlevel")
@@ -162,37 +159,42 @@ func (c *GameServer) heart_beat() {
 }
 
 func (c *GameServer) AddUserComeCallback(callback GameUserComeCallback) {
-	c.lock.Lock()
+
 	c.usercomecallback = callback
-	c.lock.Unlock()
+
 }
 
 func (c *GameServer) AddUserLeaveCallback(callback GameUserLeaveCallback) {
-	c.lock.Lock()
+
 	c.userleavecallback = callback
-	c.lock.Unlock()
+
 }
 
 func (c *GameServer) AddMsgCallback(msgid string, callback GameMsgCallback) {
-	c.lock.Lock()
-	c.msgcallbacks[msgid] = callback
-	c.lock.Unlock()
+
+	c.msgcallbacks.Store(msgid, callback)
+
 }
 
 func (c *GameServer) RemoveMsgCallback(msgid string) {
-	c.lock.Lock()
-	delete(c.msgcallbacks, msgid)
-	c.lock.Unlock()
+
+	c.msgcallbacks.Delete(msgid)
+
 }
 
-func (c *GameServer) SendMsgToUser(UserId int, data interface{}) {
-	c.lock.Lock()
-	c.lock.Unlock()
+func (c *GameServer) SendMsgToUser(UserId int, msgid string, data interface{}) {
+	userdata, ok := c.user_conn.Load(UserId)
+	if ok {
+		c.http.WsSendMsg(userdata.(*UserData).Connection, msgid, data)
+	}
 }
 
-func (c *GameServer) SendMsgToAll(data interface{}) {
-	c.lock.Lock()
-	c.lock.Unlock()
+func (c *GameServer) SendMsgToAll(msgid string, data interface{}) {
+	c.conn_user.Range(func(key, value any) bool {
+		v := value.(*UserData)
+		c.http.WsSendMsg(v.Connection, msgid, data)
+		return true
+	})
 }
 
 func (c *GameServer) KickOutUser(UserId int) {
