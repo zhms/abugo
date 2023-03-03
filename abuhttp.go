@@ -266,7 +266,8 @@ func (c *AbuHttp) Get(path string, handlers ...AbuHttpHandler) {
 				err := recover()
 				if err != nil {
 					logs.Error(err)
-					debug.PrintStack()
+					stack := debug.Stack()
+					logs.Error(stack)
 				}
 			}()
 			for i := range handlers {
@@ -284,7 +285,8 @@ func (c *AbuHttp) GetNoAuth(path string, handlers ...AbuHttpHandler) {
 				err := recover()
 				if err != nil {
 					logs.Error(err)
-					debug.PrintStack()
+					stack := debug.Stack()
+					logs.Error(stack)
 				}
 			}()
 			for i := range handlers {
@@ -320,7 +322,8 @@ func (c *AbuHttp) Post(path string, handlers ...AbuHttpHandler) {
 				err := recover()
 				if err != nil {
 					logs.Error(err)
-					debug.PrintStack()
+					stack := debug.Stack()
+					logs.Error(stack)
 				}
 			}()
 			for i := range handlers {
@@ -338,7 +341,8 @@ func (c *AbuHttp) PostNoAuth(path string, handlers ...AbuHttpHandler) {
 				err := recover()
 				if err != nil {
 					logs.Error(err)
-					debug.PrintStack()
+					stack := debug.Stack()
+					logs.Error(stack)
 				}
 			}()
 			for i := range handlers {
@@ -416,7 +420,8 @@ func (c *AbuHttp) ws(ctx *AbuHttpContent) {
 						err := recover()
 						if err != nil {
 							logs.Error(err)
-							debug.PrintStack()
+							stack := debug.Stack()
+							logs.Error(stack)
 						}
 					}()
 					cb := callback.(AbuWsMsgCallback)
@@ -429,7 +434,8 @@ func (c *AbuHttp) ws(ctx *AbuHttpContent) {
 							err := recover()
 							if err != nil {
 								logs.Error(err)
-								debug.PrintStack()
+								stack := debug.Stack()
+								logs.Error(stack)
 							}
 						}()
 						c.default_msg_callback(id, md.MsgId, md.Data)
