@@ -91,11 +91,6 @@ type AbuHttp struct {
 	default_msg_callback AbuWsDefaultMsgCallback
 }
 
-type AbuDbError struct {
-	ErrCode int    `json:"errcode"`
-	ErrMsg  string `json:"errmsg"`
-}
-
 func (c *AbuHttp) Static(relativePaths string, root string) {
 	c.gin.Static(relativePaths, root)
 }
@@ -132,11 +127,6 @@ func (ctx *AbuHttpContent) RespJson(obj any) {
 	ctx.gin.JSON(http.StatusOK, obj)
 }
 
-func (ctx *AbuHttpContent) RespFile(savename string, filepath string) {
-	ctx.gin.Header("Content-Disposition", fmt.Sprintf("attachment;filename=%s.xls", savename))
-	ctx.gin.File(filepath)
-}
-
 func (ctx *AbuHttpContent) RespErr(err error, errcode *int) bool {
 	(*errcode)--
 	if err != nil {
@@ -151,25 +141,11 @@ func (ctx *AbuHttpContent) RespErr(err error, errcode *int) bool {
 	return err != nil
 }
 
-func (ctx *AbuHttpContent) RespProcedureErr(err *map[string]interface{}) bool {
+func (ctx *AbuHttpContent) RespProcErr(err *map[string]interface{}) bool {
 	if err != nil && (*err)["errcode"] != nil {
 		resp := new(HttpResponse)
 		ctx.Put("errcode", InterfaceToInt64((*err)["errcode"]))
 		ctx.Put("errmsg", InterfaceToString((*err)["errmsg"]))
-		resp.Code = HTTP_RESPONSE_CODE_ERROR
-		resp.Msg = HTTP_RESPONSE_CODE_ERROR_MESSAGE
-		resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
-		ctx.gin.JSON(http.StatusOK, resp)
-		return true
-	}
-	return false
-}
-
-func (ctx *AbuHttpContent) RespDbErr(dberr *AbuDbError) bool {
-	if dberr != nil && dberr.ErrCode > 0 && len(dberr.ErrMsg) > 0 {
-		resp := new(HttpResponse)
-		ctx.Put("errcode", dberr.ErrCode)
-		ctx.Put("errmsg", dberr.ErrMsg)
 		resp.Code = HTTP_RESPONSE_CODE_ERROR
 		resp.Msg = HTTP_RESPONSE_CODE_ERROR_MESSAGE
 		resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
