@@ -65,7 +65,7 @@ func (c *AbuDbWhere) Sql() (string, []interface{}) {
 	return wstr, wv
 }
 
-func (c *AbuDbWhere) Append(words string) *AbuDbWhere {
+func (c *AbuDbWhere) EndWith(words string) *AbuDbWhere {
 	if c.Data == nil {
 		c.Data = make(map[string]interface{})
 	}

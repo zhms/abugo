@@ -44,8 +44,13 @@ func (c *AbuDbTable) Select(SelectStr string) *AbuDbTable {
 	return c
 }
 
-func (c *AbuDbTable) Where(where AbuDbWhere) *AbuDbTable {
-	c.where = where.Data
+func (c *AbuDbTable) Where(where interface{}) *AbuDbTable {
+	wheretype := reflect.TypeOf(where)
+	if strings.Index(wheretype.Name(), "AbuDbWhere") >= 0 {
+		c.where = where.(AbuDbWhere).Data
+	} else {
+
+	}
 	return c
 }
 
