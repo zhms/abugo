@@ -15,6 +15,7 @@ package abugo
 	go get github.com/go-playground/universal-translator
 	go get code.google.com/p/mahonia
 	go get github.com/360EntSecGroup-Skylar/excelize
+	go clean -modcache
 */
 import (
 	"bytes"
