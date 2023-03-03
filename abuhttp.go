@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
+	"runtime/debug"
 	"sync"
 
 	"github.com/beego/beego/logs"
@@ -233,7 +234,10 @@ func (c *AbuHttp) Init(cfgkey string) {
 }
 
 func (c *AbuHttp) InitWs(url string) {
-	c.GetNoAuth(url, c.ws)
+	c.gin.GET(url, func(gc *gin.Context) {
+		ctx := &AbuHttpContent{gc, "", ""}
+		c.ws(ctx)
+	})
 }
 
 func (c *AbuHttp) Get(path string, handlers ...AbuHttpHandler) {
@@ -257,18 +261,36 @@ func (c *AbuHttp) Get(path string, handlers ...AbuHttpHandler) {
 		c.token.Expire(rediskey, c.tokenlifetime)
 		ctx.TokenData = string(tokendata.([]uint8))
 		ctx.Token = tokenstr
-		for i := range handlers {
-			handlers[i](ctx)
-		}
+		go func() {
+			defer func() {
+				err := recover()
+				if err != nil {
+					logs.Error(err)
+					debug.PrintStack()
+				}
+			}()
+			for i := range handlers {
+				handlers[i](ctx)
+			}
+		}()
 	})
 }
 
 func (c *AbuHttp) GetNoAuth(path string, handlers ...AbuHttpHandler) {
 	c.gin.GET(path, func(gc *gin.Context) {
 		ctx := &AbuHttpContent{gc, "", ""}
-		for i := range handlers {
-			handlers[i](ctx)
-		}
+		go func() {
+			defer func() {
+				err := recover()
+				if err != nil {
+					logs.Error(err)
+					debug.PrintStack()
+				}
+			}()
+			for i := range handlers {
+				handlers[i](ctx)
+			}
+		}()
 	})
 }
 
@@ -293,18 +315,36 @@ func (c *AbuHttp) Post(path string, handlers ...AbuHttpHandler) {
 		c.token.Expire(rediskey, c.tokenlifetime)
 		ctx.TokenData = string(tokendata.([]uint8))
 		ctx.Token = tokenstr
-		for i := range handlers {
-			handlers[i](ctx)
-		}
+		go func() {
+			defer func() {
+				err := recover()
+				if err != nil {
+					logs.Error(err)
+					debug.PrintStack()
+				}
+			}()
+			for i := range handlers {
+				handlers[i](ctx)
+			}
+		}()
 	})
 }
 
 func (c *AbuHttp) PostNoAuth(path string, handlers ...AbuHttpHandler) {
 	c.gin.POST(path, func(gc *gin.Context) {
 		ctx := &AbuHttpContent{gc, "", ""}
-		for i := range handlers {
-			handlers[i](ctx)
-		}
+		go func() {
+			defer func() {
+				err := recover()
+				if err != nil {
+					logs.Error(err)
+					debug.PrintStack()
+				}
+			}()
+			for i := range handlers {
+				handlers[i](ctx)
+			}
+		}()
 	})
 }
 
@@ -371,11 +411,29 @@ func (c *AbuHttp) ws(ctx *AbuHttpContent) {
 		if err == nil {
 			callback, cbok := c.msg_callback.Load(md.MsgId)
 			if cbok {
-				cb := callback.(AbuWsMsgCallback)
-				cb(id, md.Data)
+				go func() {
+					defer func() {
+						err := recover()
+						if err != nil {
+							logs.Error(err)
+							debug.PrintStack()
+						}
+					}()
+					cb := callback.(AbuWsMsgCallback)
+					cb(id, md.Data)
+				}()
 			} else {
 				if c.default_msg_callback != nil {
-					c.default_msg_callback(id, md.MsgId, md.Data)
+					go func() {
+						defer func() {
+							err := recover()
+							if err != nil {
+								logs.Error(err)
+								debug.PrintStack()
+							}
+						}()
+						c.default_msg_callback(id, md.MsgId, md.Data)
+					}()
 				}
 			}
 		}
