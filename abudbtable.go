@@ -27,6 +27,8 @@ type AbuDbTable struct {
 	delete    map[string]interface{}
 	pagekey   string
 	pageorder string
+	dicsql    string
+	dicwv     []interface{}
 }
 
 func (c *AbuDbTable) Conn(db *sql.DB) *AbuDbTable {
@@ -44,12 +46,49 @@ func (c *AbuDbTable) Select(SelectStr string) *AbuDbTable {
 	return c
 }
 
-func (c *AbuDbTable) Where(where interface{}) *AbuDbTable {
-	wheretype := reflect.TypeOf(where)
+func (c *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
+	wheretype := reflect.TypeOf(where[0])
 	if strings.Index(wheretype.Name(), "AbuDbWhere") >= 0 {
-		c.where = where.(AbuDbWhere).Data
+		c.where = where[0].(AbuDbWhere).Data
+	} else if wheretype.Name() == "string" {
+		c.dicsql = where[0].(string)
+		for i := 1; i < len(where); i++ {
+			c.dicwv = append(c.dicwv, where[i])
+		}
 	} else {
-
+		w := AbuDbWhere{}
+		wheretype := reflect.TypeOf(where[0])
+		wherevalue := reflect.ValueOf(where[0])
+		for i := 0; i < wheretype.NumField(); i++ {
+			field := wheretype.Field(i)
+			tag, ok := field.Tag.Lookup("sql")
+			if ok {
+				tags := strings.Split(tag, ",")
+				if len(tags) == 2 {
+					fmt.Println(field.Type.Name())
+					if field.Type.Name() == "string" {
+						w.Add("and", field.Name, tags[0], wherevalue.Field(i).String(), tags[1])
+					} else if field.Type.Name() == "int" {
+						iv, _ := strconv.ParseInt(tags[1], 10, 64)
+						w.Add("and", field.Name, tags[0], wherevalue.Field(i).Int(), int(iv))
+					} else if field.Type.Name() == "int32" {
+						iv, _ := strconv.ParseInt(tags[1], 10, 64)
+						w.Add("and", field.Name, tags[0], int32(wherevalue.Field(i).Int()), int32(iv))
+					} else if field.Type.Name() == "int64" {
+						iv, _ := strconv.ParseInt(tags[1], 10, 64)
+						fmt.Println(iv)
+						w.Add("and", field.Name, tags[0], int64(wherevalue.Field(i).Int()), int64(iv))
+					} else if field.Type.Name() == "float32" {
+						iv, _ := strconv.ParseFloat(tags[1], 64)
+						w.Add("and", field.Name, tags[0], float32(wherevalue.Field(i).Float()), float32(iv))
+					} else if field.Type.Name() == "float64" {
+						iv, _ := strconv.ParseFloat(tags[1], 64)
+						w.Add("and", field.Name, tags[0], float64(wherevalue.Field(i).Float()), float64(iv))
+					}
+				}
+			}
+		}
+		c.where = w.Data
 	}
 	return c
 }
@@ -221,6 +260,10 @@ func (c *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, order
 			wstr += v.Field
 		}
 	}
+	if len(c.dicsql) > 0 {
+		wstr = c.dicsql
+		wv = c.dicwv
+	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT COUNT(*) AS Total FROM %s where %s", c.tablename, wstr)
 	} else {
@@ -241,6 +284,7 @@ func (c *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, order
 	if total == 0 {
 		return &[]map[string]interface{}{}, 0
 	}
+
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s  ", c.selectstr, c.tablename, c.join, wstr)
 	} else {
@@ -309,6 +353,10 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 		}
 	}
 	orderby = strings.ToLower(orderby)
+	if len(c.dicsql) > 0 {
+		wstr = c.dicsql
+		wv = c.dicwv
+	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT COUNT(%s) AS Total FROM %s where %s", orderbyfield, c.tablename, wstr)
 	} else {
@@ -329,6 +377,7 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 	if total == 0 {
 		return &[]map[string]interface{}{}, 0
 	}
+
 	orderbyex := orderbyfield + " " + orderby
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s where %s order by %s limit %d,1", orderbyfield, c.tablename, wstr, orderbyex, (Page-1)*PageSize)
@@ -349,6 +398,7 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 	var minvalue int
 	dbresult.Scan(&minvalue)
 	dbresult.Close()
+
 	opt := ""
 	if orderby == "asc" {
 		opt = ">="
@@ -356,46 +406,13 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 	if orderby == "desc" {
 		opt = "<="
 	}
-	if c.where == nil {
-		c.where = make(map[string]interface{})
+	wstr = fmt.Sprintf("%s %s ? and (%s)", orderbyfield, opt, wstr)
+	twv := []interface{}{}
+	twv = append(twv, minvalue)
+	for i := 0; i < len(wv); i++ {
+		twv = append(twv, wv[i])
 	}
-	c.where[fmt.Sprintf("%s.%s@-1@%s", c.tablename, orderbyfield, opt)] = minvalue
-	wstr = ""
-	wv = []interface{}{}
-	order = []FieldValue{}
-	for k, v := range c.where {
-		ks := strings.Split(k, "@")
-		opt := "="
-		if len(ks) == 3 {
-			opt = ks[2]
-		}
-		if len(ks) == 2 || len(ks) == 3 {
-			sort, _ := strconv.ParseInt(ks[1], 10, 32)
-			order = append(order, FieldValue{Sort: sort, Field: ks[0], Value: v, Opt: opt})
-		} else if len(ks) == 1 {
-			order = append(order, FieldValue{Sort: 1000000, Field: k, Value: nil, Opt: opt})
-		}
-	}
-	sort.Slice(order, func(i, j int) bool {
-		return order[i].Sort < order[j].Sort
-	})
-	for k, v := range order {
-		if k == 1 {
-			if v.Value != nil {
-				wstr += fmt.Sprintf(" and %s %s ? ", v.Field, v.Opt)
-				wv = append(wv, v.Value)
-			} else {
-				wstr += v.Field
-			}
-		} else {
-			if v.Value != nil {
-				wstr += fmt.Sprintf(" %s %s ? ", v.Field, v.Opt)
-				wv = append(wv, v.Value)
-			} else {
-				wstr += v.Field
-			}
-		}
-	}
+	wv = twv
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s  ", c.selectstr, c.tablename, c.join, wstr)
 	} else {
@@ -496,6 +513,10 @@ func (c *AbuDbTable) get_select_sql() (string, []interface{}) {
 			wstr += v.Field
 		}
 	}
+	if len(c.dicsql) > 0 {
+		wstr = c.dicsql
+		wv = c.dicwv
+	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s ", c.selectstr, c.tablename, c.join, wstr)
 	} else {
@@ -546,6 +567,10 @@ func (c *AbuDbTable) get_delete_sql() (string, []interface{}) {
 		} else {
 			wstr += v.Field
 		}
+	}
+	if len(c.dicsql) > 0 {
+		wstr = c.dicsql
+		wv = c.dicwv
 	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("DELETE FROM %s  WHERE %s ", c.tablename, wstr)
@@ -598,6 +623,10 @@ func (c *AbuDbTable) get_update_sql() (string, []interface{}) {
 			wstr += v.Field
 		}
 	}
+	if len(c.dicsql) > 0 {
+		wstr = c.dicsql
+		uv = c.dicwv
+	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("UPDATE %s SET%s WHERE %s ", c.tablename, ustr, wstr)
 	} else {
@@ -616,6 +645,10 @@ func (c *AbuDbTable) get_insert_sql() (string, []interface{}) {
 		ivstr += "?,"
 		iv = append(iv, v)
 	}
+	if len(c.dicsql) > 0 {
+		istr = c.dicsql
+		iv = c.dicwv
+	}
 	if len(istr) > 0 {
 		istr = strings.TrimRight(istr, ",")
 		ivstr = strings.TrimRight(ivstr, ",")
@@ -633,6 +666,10 @@ func (c *AbuDbTable) get_replace_sql() (string, []interface{}) {
 		istr += fmt.Sprintf("%s,", k)
 		ivstr += "?,"
 		iv = append(iv, v)
+	}
+	if len(c.dicsql) > 0 {
+		istr = c.dicsql
+		iv = c.dicwv
 	}
 	if len(istr) > 0 {
 		istr = strings.TrimRight(istr, ",")
