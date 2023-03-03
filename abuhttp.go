@@ -242,6 +242,14 @@ func (c *AbuHttp) InitWs(url string) {
 
 func (c *AbuHttp) Get(path string, handlers ...AbuHttpHandler) {
 	c.gin.GET(path, func(gc *gin.Context) {
+		defer func() {
+			err := recover()
+			if err != nil {
+				logs.Error(err)
+				stack := debug.Stack()
+				logs.Error(string(stack))
+			}
+		}()
 		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token == nil {
 			ctx.RespNoAuth(-1, "未配置token redis")
@@ -261,43 +269,39 @@ func (c *AbuHttp) Get(path string, handlers ...AbuHttpHandler) {
 		c.token.Expire(rediskey, c.tokenlifetime)
 		ctx.TokenData = string(tokendata.([]uint8))
 		ctx.Token = tokenstr
-		go func() {
-			defer func() {
-				err := recover()
-				if err != nil {
-					logs.Error(err)
-					stack := debug.Stack()
-					logs.Error(string(stack))
-				}
-			}()
-			for i := range handlers {
-				handlers[i](ctx)
-			}
-		}()
+		for i := range handlers {
+			handlers[i](ctx)
+		}
 	})
 }
 
 func (c *AbuHttp) GetNoAuth(path string, handlers ...AbuHttpHandler) {
 	c.gin.GET(path, func(gc *gin.Context) {
-		ctx := &AbuHttpContent{gc, "", ""}
-		go func() {
-			defer func() {
-				err := recover()
-				if err != nil {
-					logs.Error(err)
-					stack := debug.Stack()
-					logs.Error(string(stack))
-				}
-			}()
-			for i := range handlers {
-				handlers[i](ctx)
+		defer func() {
+			err := recover()
+			if err != nil {
+				logs.Error(err)
+				stack := debug.Stack()
+				logs.Error(string(stack))
 			}
 		}()
+		ctx := &AbuHttpContent{gc, "", ""}
+		for i := range handlers {
+			handlers[i](ctx)
+		}
 	})
 }
 
 func (c *AbuHttp) Post(path string, handlers ...AbuHttpHandler) {
 	c.gin.POST(path, func(gc *gin.Context) {
+		defer func() {
+			err := recover()
+			if err != nil {
+				logs.Error(err)
+				stack := debug.Stack()
+				logs.Error(string(stack))
+			}
+		}()
 		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token == nil {
 			ctx.RespNoAuth(-1, "未配置token redis")
@@ -317,38 +321,26 @@ func (c *AbuHttp) Post(path string, handlers ...AbuHttpHandler) {
 		c.token.Expire(rediskey, c.tokenlifetime)
 		ctx.TokenData = string(tokendata.([]uint8))
 		ctx.Token = tokenstr
-		go func() {
-			defer func() {
-				err := recover()
-				if err != nil {
-					logs.Error(err)
-					stack := debug.Stack()
-					logs.Error(string(stack))
-				}
-			}()
-			for i := range handlers {
-				handlers[i](ctx)
-			}
-		}()
+		for i := range handlers {
+			handlers[i](ctx)
+		}
 	})
 }
 
 func (c *AbuHttp) PostNoAuth(path string, handlers ...AbuHttpHandler) {
 	c.gin.POST(path, func(gc *gin.Context) {
-		ctx := &AbuHttpContent{gc, "", ""}
-		go func() {
-			defer func() {
-				err := recover()
-				if err != nil {
-					logs.Error(err)
-					stack := debug.Stack()
-					logs.Error(string(stack))
-				}
-			}()
-			for i := range handlers {
-				handlers[i](ctx)
+		defer func() {
+			err := recover()
+			if err != nil {
+				logs.Error(err)
+				stack := debug.Stack()
+				logs.Error(string(stack))
 			}
 		}()
+		ctx := &AbuHttpContent{gc, "", ""}
+		for i := range handlers {
+			handlers[i](ctx)
+		}
 	})
 }
 
