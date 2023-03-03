@@ -65,10 +65,10 @@ func (c *AbuDbWhere) Sql() (string, []interface{}) {
 	return wstr, wv
 }
 
-func (c *AbuDbWhere) End(field string) *AbuDbWhere {
+func (c *AbuDbWhere) Append(words string) *AbuDbWhere {
 	if c.Data == nil {
 		c.Data = make(map[string]interface{})
 	}
-	c.Data[field] = 0
+	c.Data[words] = 0
 	return c
 }
