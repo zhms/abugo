@@ -65,7 +65,6 @@ func (c *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 			if ok {
 				tags := strings.Split(tag, ",")
 				if len(tags) == 2 {
-					fmt.Println(field.Type.Name())
 					if field.Type.Name() == "string" {
 						w.Add("and", field.Name, tags[0], wherevalue.Field(i).String(), tags[1])
 					} else if field.Type.Name() == "int" {
@@ -76,7 +75,6 @@ func (c *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 						w.Add("and", field.Name, tags[0], int32(wherevalue.Field(i).Int()), int32(iv))
 					} else if field.Type.Name() == "int64" {
 						iv, _ := strconv.ParseInt(tags[1], 10, 64)
-						fmt.Println(iv)
 						w.Add("and", field.Name, tags[0], int64(wherevalue.Field(i).Int()), int64(iv))
 					} else if field.Type.Name() == "float32" {
 						iv, _ := strconv.ParseFloat(tags[1], 64)

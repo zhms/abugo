@@ -75,6 +75,7 @@ func (c *AbuDb) CallProcedure(procname string, args ...interface{}) (*map[string
 
 	dbresult, err := c.db.DB().Query(sql, args...)
 	if err != nil {
+		logs.Error(err)
 		return nil, err
 	}
 	if dbresult.Next() {
