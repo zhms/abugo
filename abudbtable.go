@@ -623,7 +623,9 @@ func (c *AbuDbTable) get_update_sql() (string, []interface{}) {
 	}
 	if len(c.dicsql) > 0 {
 		wstr = c.dicsql
-		uv = c.dicwv
+		for i := 0; i < len(c.dicwv); i++ {
+			uv = append(uv, c.dicwv[i])
+		}
 	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("UPDATE %s SET%s WHERE %s ", c.tablename, ustr, wstr)

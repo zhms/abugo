@@ -182,6 +182,7 @@ func (ctx *AbuHttpContent) RespNoAuth(errcode int, errmsg string) {
 func (ctx *AbuHttpContent) FromFile(name string) (multipart.File, *multipart.FileHeader, error) {
 	return ctx.gin.Request.FormFile(name)
 }
+
 func (ctx *AbuHttpContent) SaveUploadedFile(file *multipart.FileHeader, dst string) error {
 	return ctx.gin.SaveUploadedFile(file, dst)
 }
