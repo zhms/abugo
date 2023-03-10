@@ -269,7 +269,7 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
 				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
-			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
+			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
 		if len(auth) > 0 {
 			spauth := strings.Split(auth, ".")
@@ -338,7 +338,7 @@ func (c *AbuHttp) GetNoAuth(path string, handler AbuHttpHandler) {
 			}
 			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
-			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
+			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
 		handler(ctx)
 	})
@@ -393,7 +393,7 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler, auth string) {
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
 				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
-			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
+			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
 		if len(auth) > 0 {
 			spauth := strings.Split(auth, ".")
@@ -462,7 +462,7 @@ func (c *AbuHttp) PostNoAuth(path string, handler AbuHttpHandler) {
 			}
 			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
-			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
+			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
 		handler(ctx)
 	})
