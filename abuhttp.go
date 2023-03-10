@@ -231,9 +231,9 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 		if c.token != nil {
 			body, _ := ioutil.ReadAll(gc.Request.Body)
 			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
-			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), jlog)
+			strlog, _ := json.Marshal(&jlog)
+			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
 		}
-
 		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token == nil {
 			ctx.RespNoAuth(-1, "未配置token redis")
@@ -270,7 +270,8 @@ func (c *AbuHttp) GetNoAuth(path string, handler AbuHttpHandler) {
 		if c.token != nil {
 			body, _ := ioutil.ReadAll(gc.Request.Body)
 			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
-			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), jlog)
+			strlog, _ := json.Marshal(&jlog)
+			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
 		}
 		ctx := &AbuHttpContent{gc, "", ""}
 		handler(ctx)
@@ -290,7 +291,8 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler) {
 		if c.token != nil {
 			body, _ := ioutil.ReadAll(gc.Request.Body)
 			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
-			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), jlog)
+			strlog, _ := json.Marshal(&jlog)
+			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
 		}
 		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token == nil {
@@ -328,7 +330,8 @@ func (c *AbuHttp) PostNoAuth(path string, handler AbuHttpHandler) {
 		if c.token != nil {
 			body, _ := ioutil.ReadAll(gc.Request.Body)
 			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
-			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), jlog)
+			strlog, _ := json.Marshal(&jlog)
+			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
 		}
 		ctx := &AbuHttpContent{gc, "", ""}
 		handler(ctx)
