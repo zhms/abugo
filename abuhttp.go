@@ -267,7 +267,7 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 			iauthdata = jtoken["AuthData"]
 			jlog := gin.H{"Path": gc.Request.URL.Path,
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
-				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp()}
+				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp(), "Token": tokenstr}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
@@ -391,7 +391,7 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler, auth string) {
 			iauthdata = jtoken["AuthData"]
 			jlog := gin.H{"Path": gc.Request.URL.Path,
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
-				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp()}
+				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp(), "Token": tokenstr}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
