@@ -3,6 +3,7 @@ package abugo
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"runtime/debug"
@@ -217,7 +218,7 @@ func (c *AbuHttp) InitWs(url string) {
 	})
 }
 
-func (c *AbuHttp) Get(path string, handlers ...AbuHttpHandler) {
+func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 	c.gin.GET(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
@@ -227,6 +228,12 @@ func (c *AbuHttp) Get(path string, handlers ...AbuHttpHandler) {
 				logs.Error(string(stack))
 			}
 		}()
+		if c.token != nil {
+			body, _ := ioutil.ReadAll(gc.Request.Body)
+			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
+			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), jlog)
+		}
+
 		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token == nil {
 			ctx.RespNoAuth(-1, "未配置token redis")
@@ -246,13 +253,11 @@ func (c *AbuHttp) Get(path string, handlers ...AbuHttpHandler) {
 		c.token.Expire(rediskey, c.tokenlifetime)
 		ctx.TokenData = string(tokendata.([]uint8))
 		ctx.Token = tokenstr
-		for i := range handlers {
-			handlers[i](ctx)
-		}
+		handler(ctx)
 	})
 }
 
-func (c *AbuHttp) GetNoAuth(path string, handlers ...AbuHttpHandler) {
+func (c *AbuHttp) GetNoAuth(path string, handler AbuHttpHandler) {
 	c.gin.GET(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
@@ -262,14 +267,17 @@ func (c *AbuHttp) GetNoAuth(path string, handlers ...AbuHttpHandler) {
 				logs.Error(string(stack))
 			}
 		}()
-		ctx := &AbuHttpContent{gc, "", ""}
-		for i := range handlers {
-			handlers[i](ctx)
+		if c.token != nil {
+			body, _ := ioutil.ReadAll(gc.Request.Body)
+			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
+			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), jlog)
 		}
+		ctx := &AbuHttpContent{gc, "", ""}
+		handler(ctx)
 	})
 }
 
-func (c *AbuHttp) Post(path string, handlers ...AbuHttpHandler) {
+func (c *AbuHttp) Post(path string, handler AbuHttpHandler) {
 	c.gin.POST(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
@@ -279,6 +287,11 @@ func (c *AbuHttp) Post(path string, handlers ...AbuHttpHandler) {
 				logs.Error(string(stack))
 			}
 		}()
+		if c.token != nil {
+			body, _ := ioutil.ReadAll(gc.Request.Body)
+			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
+			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), jlog)
+		}
 		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token == nil {
 			ctx.RespNoAuth(-1, "未配置token redis")
@@ -298,13 +311,11 @@ func (c *AbuHttp) Post(path string, handlers ...AbuHttpHandler) {
 		c.token.Expire(rediskey, c.tokenlifetime)
 		ctx.TokenData = string(tokendata.([]uint8))
 		ctx.Token = tokenstr
-		for i := range handlers {
-			handlers[i](ctx)
-		}
+		handler(ctx)
 	})
 }
 
-func (c *AbuHttp) PostNoAuth(path string, handlers ...AbuHttpHandler) {
+func (c *AbuHttp) PostNoAuth(path string, handler AbuHttpHandler) {
 	c.gin.POST(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
@@ -314,10 +325,13 @@ func (c *AbuHttp) PostNoAuth(path string, handlers ...AbuHttpHandler) {
 				logs.Error(string(stack))
 			}
 		}()
-		ctx := &AbuHttpContent{gc, "", ""}
-		for i := range handlers {
-			handlers[i](ctx)
+		if c.token != nil {
+			body, _ := ioutil.ReadAll(gc.Request.Body)
+			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
+			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), jlog)
 		}
+		ctx := &AbuHttpContent{gc, "", ""}
+		handler(ctx)
 	})
 }
 
