@@ -228,13 +228,23 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 				logs.Error(string(stack))
 			}
 		}()
+		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token != nil {
 			body, _ := ioutil.ReadAll(gc.Request.Body)
-			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
+			strbody := string(body)
+			if len(strbody) == 0 {
+				strbody = "{}"
+			}
+			jbody := map[string]interface{}{}
+			err := json.Unmarshal([]byte(body), &jbody)
+			if err != nil {
+				ctx.RespNoAuth(-1, "参数必须是json格式")
+				return
+			}
+			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
 		}
-		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token == nil {
 			ctx.RespNoAuth(-1, "未配置token redis")
 			return
@@ -267,13 +277,23 @@ func (c *AbuHttp) GetNoAuth(path string, handler AbuHttpHandler) {
 				logs.Error(string(stack))
 			}
 		}()
+		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token != nil {
 			body, _ := ioutil.ReadAll(gc.Request.Body)
-			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
+			strbody := string(body)
+			if len(strbody) == 0 {
+				strbody = "{}"
+			}
+			jbody := map[string]interface{}{}
+			err := json.Unmarshal([]byte(body), &jbody)
+			if err != nil {
+				ctx.RespNoAuth(-1, "参数必须是json格式")
+				return
+			}
+			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
 		}
-		ctx := &AbuHttpContent{gc, "", ""}
 		handler(ctx)
 	})
 }
@@ -288,13 +308,23 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler) {
 				logs.Error(string(stack))
 			}
 		}()
+		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token != nil {
 			body, _ := ioutil.ReadAll(gc.Request.Body)
-			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
+			strbody := string(body)
+			if len(strbody) == 0 {
+				strbody = "{}"
+			}
+			jbody := map[string]interface{}{}
+			err := json.Unmarshal([]byte(body), &jbody)
+			if err != nil {
+				ctx.RespNoAuth(-1, "参数必须是json格式")
+				return
+			}
+			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
 		}
-		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token == nil {
 			ctx.RespNoAuth(-1, "未配置token redis")
 			return
@@ -327,13 +357,23 @@ func (c *AbuHttp) PostNoAuth(path string, handler AbuHttpHandler) {
 				logs.Error(string(stack))
 			}
 		}()
+		ctx := &AbuHttpContent{gc, "", ""}
 		if c.token != nil {
 			body, _ := ioutil.ReadAll(gc.Request.Body)
-			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": string(body)}
+			strbody := string(body)
+			if len(strbody) == 0 {
+				strbody = "{}"
+			}
+			jbody := map[string]interface{}{}
+			err := json.Unmarshal([]byte(body), &jbody)
+			if err != nil {
+				ctx.RespNoAuth(-1, "参数必须是json格式")
+				return
+			}
+			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
 		}
-		ctx := &AbuHttpContent{gc, "", ""}
 		handler(ctx)
 	})
 }
