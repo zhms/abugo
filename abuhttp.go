@@ -260,7 +260,7 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 				return
 			}
 			jtoken := map[string]interface{}{}
-			json.Unmarshal([]byte(tokenstr), &jtoken)
+			json.Unmarshal([]byte(ctx.TokenData), &jtoken)
 			jlog := gin.H{"Path": gc.Request.URL.Path,
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
 				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"]}
@@ -344,7 +344,7 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler) {
 				return
 			}
 			jtoken := map[string]interface{}{}
-			json.Unmarshal([]byte(tokenstr), &jtoken)
+			json.Unmarshal([]byte(ctx.TokenData), &jtoken)
 			jlog := gin.H{"Path": gc.Request.URL.Path,
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
 				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"]}
