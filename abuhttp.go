@@ -6,7 +6,9 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"reflect"
 	"runtime/debug"
+	"strings"
 	"sync"
 
 	"github.com/beego/beego/logs"
@@ -247,6 +249,7 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 		c.token.Expire(rediskey, c.tokenlifetime)
 		ctx.TokenData = string(tokendata.([]uint8))
 		ctx.Token = tokenstr
+		var iauthdata interface{}
 		if c.token != nil {
 			body, _ := ioutil.ReadAll(gc.Request.Body)
 			strbody := string(body)
@@ -261,11 +264,50 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 			}
 			jtoken := map[string]interface{}{}
 			json.Unmarshal([]byte(ctx.TokenData), &jtoken)
+			iauthdata = jtoken["AuthData"]
 			jlog := gin.H{"Path": gc.Request.URL.Path,
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
-				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"]}
+				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
+		}
+		if len(auth) > 0 {
+			spauth := strings.Split(auth, ".")
+			m := spauth[0]
+			s := spauth[1]
+			o := spauth[2]
+			if len(spauth) == 3 && iauthdata != nil {
+				authdata := make(map[string]interface{})
+				json.Unmarshal([]byte(iauthdata.(string)), &authdata)
+				im, imok := authdata[m]
+				if !imok {
+					errcode := 0
+					ctx.RespErrString(true, &errcode, "权限不足")
+					return
+				}
+				is, isok := im.(map[string]interface{})[s]
+				if !isok {
+					errcode := 0
+					ctx.RespErrString(true, &errcode, "权限不足")
+					return
+				}
+				io, iook := is.(map[string]interface{})[o]
+				if !iook {
+					errcode := 0
+					ctx.RespErrString(true, &errcode, "权限不足")
+					return
+				}
+				if strings.Index(reflect.TypeOf(io).Name(), "float64") < 0 {
+					errcode := 0
+					ctx.RespErrString(true, &errcode, "权限不足")
+					return
+				}
+				if InterfaceToInt(io) != 1 {
+					errcode := 0
+					ctx.RespErrString(true, &errcode, "权限不足")
+					return
+				}
+			}
 		}
 		handler(ctx)
 	})
@@ -294,7 +336,7 @@ func (c *AbuHttp) GetNoAuth(path string, handler AbuHttpHandler) {
 				ctx.RespNoAuth(-1, "参数必须是json格式")
 				return
 			}
-			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody}
+			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
 		}
@@ -302,7 +344,7 @@ func (c *AbuHttp) GetNoAuth(path string, handler AbuHttpHandler) {
 	})
 }
 
-func (c *AbuHttp) Post(path string, handler AbuHttpHandler) {
+func (c *AbuHttp) Post(path string, handler AbuHttpHandler, auth string) {
 	c.gin.POST(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
@@ -331,6 +373,7 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler) {
 		c.token.Expire(rediskey, c.tokenlifetime)
 		ctx.TokenData = string(tokendata.([]uint8))
 		ctx.Token = tokenstr
+		var iauthdata interface{}
 		if c.token != nil {
 			body, _ := ioutil.ReadAll(gc.Request.Body)
 			strbody := string(body)
@@ -345,11 +388,50 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler) {
 			}
 			jtoken := map[string]interface{}{}
 			json.Unmarshal([]byte(ctx.TokenData), &jtoken)
+			iauthdata = jtoken["AuthData"]
 			jlog := gin.H{"Path": gc.Request.URL.Path,
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
-				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"]}
+				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
+		}
+		if len(auth) > 0 {
+			spauth := strings.Split(auth, ".")
+			m := spauth[0]
+			s := spauth[1]
+			o := spauth[2]
+			if len(spauth) == 3 && iauthdata != nil {
+				authdata := make(map[string]interface{})
+				json.Unmarshal([]byte(iauthdata.(string)), &authdata)
+				im, imok := authdata[m]
+				if !imok {
+					errcode := 0
+					ctx.RespErrString(true, &errcode, "权限不足")
+					return
+				}
+				is, isok := im.(map[string]interface{})[s]
+				if !isok {
+					errcode := 0
+					ctx.RespErrString(true, &errcode, "权限不足")
+					return
+				}
+				io, iook := is.(map[string]interface{})[o]
+				if !iook {
+					errcode := 0
+					ctx.RespErrString(true, &errcode, "权限不足")
+					return
+				}
+				if strings.Index(reflect.TypeOf(io).Name(), "float64") < 0 {
+					errcode := 0
+					ctx.RespErrString(true, &errcode, "权限不足")
+					return
+				}
+				if InterfaceToInt(io) != 1 {
+					errcode := 0
+					ctx.RespErrString(true, &errcode, "权限不足")
+					return
+				}
+			}
 		}
 		handler(ctx)
 	})
@@ -378,7 +460,7 @@ func (c *AbuHttp) PostNoAuth(path string, handler AbuHttpHandler) {
 				ctx.RespNoAuth(-1, "参数必须是json格式")
 				return
 			}
-			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody}
+			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:log", Project(), Module()), string(strlog))
 		}
