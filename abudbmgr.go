@@ -54,8 +54,26 @@ func (c *AbuDb) Init(prefix string) {
 	logs.Debug("连接数据库成功:", c.host, c.port, c.database)
 }
 
-func (c *AbuDb) Conn() *sql.DB {
+func (c *AbuDb) conn() *sql.DB {
 	return c.db.DB()
+}
+
+func (c *AbuDb) Query(query string, args ...any) *[]map[string]interface{} {
+	data, err := c.db.DB().Query(query, args...)
+	if err != nil {
+		logs.Error(err)
+		return nil
+	}
+	return c.GetResult(data)
+}
+
+func (c *AbuDb) Exec(query string, args ...any) *sql.Result {
+	data, err := c.db.DB().Exec(query, args...)
+	if err != nil {
+		logs.Error(err)
+		return nil
+	}
+	return &data
 }
 
 func (c *AbuDb) Table(tablename string) *AbuDbTable {

@@ -111,7 +111,7 @@ func (c *AbuDbTable) GetOne() (*map[string]interface{}, error) {
 	sql += " limit 1"
 	conn := c.dbconn
 	if conn == nil {
-		conn = c.db.Conn()
+		conn = c.db.conn()
 	}
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
@@ -134,7 +134,7 @@ func (c *AbuDbTable) GetList() (*[]map[string]interface{}, error) {
 	sql, wv := c.get_select_sql()
 	conn := c.dbconn
 	if conn == nil {
-		conn = c.db.Conn()
+		conn = c.db.conn()
 	}
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
@@ -157,7 +157,7 @@ func (c *AbuDbTable) Update(update map[string]interface{}) (int64, error) {
 	sql, wv := c.get_update_sql()
 	conn := c.dbconn
 	if conn == nil {
-		conn = c.db.Conn()
+		conn = c.db.conn()
 	}
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
@@ -175,7 +175,7 @@ func (c *AbuDbTable) Insert(insert map[string]interface{}) (int64, error) {
 	sql, wv := c.get_insert_sql()
 	conn := c.dbconn
 	if conn == nil {
-		conn = c.db.Conn()
+		conn = c.db.conn()
 	}
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
@@ -192,7 +192,7 @@ func (c *AbuDbTable) Delete() (int64, error) {
 	sql, wv := c.get_delete_sql()
 	conn := c.dbconn
 	if conn == nil {
-		conn = c.db.Conn()
+		conn = c.db.conn()
 	}
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
@@ -210,7 +210,7 @@ func (c *AbuDbTable) Replace(insert map[string]interface{}) (int64, error) {
 	sql, wv := c.get_replace_sql()
 	conn := c.dbconn
 	if conn == nil {
-		conn = c.db.Conn()
+		conn = c.db.conn()
 	}
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
@@ -270,7 +270,7 @@ func (c *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, order
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
 	}
-	dbresult, err := c.db.Conn().Query(sql, wv...)
+	dbresult, err := c.db.conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
 		return &[]map[string]interface{}{}, 0
@@ -296,7 +296,7 @@ func (c *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, order
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
 	}
-	dbresult, err = c.db.Conn().Query(sql, wv...)
+	dbresult, err = c.db.conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
 		return &[]map[string]interface{}{}, 0
@@ -363,7 +363,7 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
 	}
-	dbresult, err := c.db.Conn().Query(sql, wv...)
+	dbresult, err := c.db.conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
 		return &[]map[string]interface{}{}, 0
@@ -385,7 +385,7 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
 	}
-	dbresult, err = c.db.Conn().Query(sql, wv...)
+	dbresult, err = c.db.conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
 		return &[]map[string]interface{}{}, 0
@@ -423,7 +423,7 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 	if c.db.logmode {
 		logs.Debug(sql, wv...)
 	}
-	dbresult, err = c.db.Conn().Query(sql, wv...)
+	dbresult, err = c.db.conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
 		return &[]map[string]interface{}{}, 0

@@ -16,24 +16,24 @@ func AuthInit(db *AbuDb, fullauth string) {
 	jbytes, _ := json.Marshal(&jdata)
 	authstr := string(jbytes)
 	sql := "select SellerId from x_seller"
-	sellers, _ := db.Conn().Query(sql)
+	sellers, _ := db.conn().Query(sql)
 	for sellers.Next() {
 		var SellerId int
 		sellers.Scan(&SellerId)
 		sql = "select * from abu_admin_role where SellerId = ?"
-		roles, _ := db.Conn().Query(sql, SellerId)
+		roles, _ := db.conn().Query(sql, SellerId)
 		if !roles.Next() {
 			sql = "insert into abu_admin_role(RoleName,SellerId,Parent,RoleData)values(?,?,?,?)"
-			db.Conn().Exec(sql, "运营商超管", SellerId, "god", authstr)
+			db.conn().Exec(sql, "运营商超管", SellerId, "god", authstr)
 		}
 		roles.Close()
 	}
 	sellers.Close()
 	sql = "update abu_admin_role set RoleData = ? where RoleName = ?"
-	db.Conn().Exec(sql, authstr, "运营商超管")
+	db.conn().Exec(sql, authstr, "运营商超管")
 
 	sql = "select RoleData from abu_admin_role where SellerId = -1 and RoleName = '超级管理员'"
-	supers, _ := db.Conn().Query(sql)
+	supers, _ := db.conn().Query(sql)
 	hassuper := false
 	for supers != nil && supers.Next() {
 		hassuper = true
@@ -41,7 +41,7 @@ func AuthInit(db *AbuDb, fullauth string) {
 		supers.Scan(&roledata)
 		if roledata != fullauth {
 			sql = "select Id,SellerId,RoleName,RoleData from abu_admin_role"
-			roles, _ := db.Conn().Query(sql)
+			roles, _ := db.conn().Query(sql)
 			for roles.Next() {
 				var roleid int
 				var sellerid int
@@ -61,19 +61,19 @@ func AuthInit(db *AbuDb, fullauth string) {
 				}
 				newauthbyte, _ := json.Marshal(&jnewdata)
 				sql = "update abu_admin_role set RoleData = ? where id = ?"
-				db.Conn().Exec(sql, string(newauthbyte), roleid)
+				db.conn().Exec(sql, string(newauthbyte), roleid)
 			}
 			roles.Close()
 		}
 		sql = "update abu_admin_role set RoleData = ? where RoleName = '超级管理员'"
-		db.Conn().Exec(sql, fullauth)
+		db.conn().Exec(sql, fullauth)
 	}
 	if supers != nil {
 		supers.Close()
 	}
 	if !hassuper {
 		sql = "insert into abu_admin_role(RoleName,SellerId,Parent,RoleData)values(?,?,?,?)"
-		db.Conn().Exec(sql, "超级管理员", -1, "god", fullauth)
+		db.conn().Exec(sql, "超级管理员", -1, "god", fullauth)
 	}
 }
 
