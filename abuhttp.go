@@ -18,6 +18,16 @@ import (
 	"github.com/spf13/viper"
 )
 
+/*
+	错误码:
+		0. 成功
+		1. 没有配置token的redis
+		2. 请求header未填写x-token值
+		3. 未登录或者登录过期了
+		4. 参数格式错误,参数必须是json格式
+		5. 权限不足
+*/
+
 type H map[string]any
 
 type AbuHttpContent struct {
@@ -127,10 +137,6 @@ func (ctx *AbuHttpContent) RespErr(errcode int, errmsg string) {
 	resp.Msg = errmsg
 	resp.Data = ctx.gin.Keys["REPONSE_DATA"]
 	ctx.gin.JSON(http.StatusOK, resp)
-}
-
-func (ctx *AbuHttpContent) FromFile(name string) (multipart.File, *multipart.FileHeader, error) {
-	return ctx.gin.Request.FormFile(name)
 }
 
 func (ctx *AbuHttpContent) SaveUploadedFile(file *multipart.FileHeader, dst string) error {
