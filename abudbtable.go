@@ -83,6 +83,20 @@ func (c *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 						iv, _ := strconv.ParseFloat(tags[1], 64)
 						w.Add("and", field.Name, tags[0], float64(wherevalue.Field(i).Float()), float64(iv))
 					}
+				} else if len(tags) == 1 {
+					if field.Type.Name() == "string" {
+						w.Add("and", field.Name, tags[0], wherevalue.Field(i).String(), nil)
+					} else if field.Type.Name() == "int" {
+						w.Add("and", field.Name, tags[0], wherevalue.Field(i).Int(), nil)
+					} else if field.Type.Name() == "int32" {
+						w.Add("and", field.Name, tags[0], int32(wherevalue.Field(i).Int()), nil)
+					} else if field.Type.Name() == "int64" {
+						w.Add("and", field.Name, tags[0], int64(wherevalue.Field(i).Int()), nil)
+					} else if field.Type.Name() == "float32" {
+						w.Add("and", field.Name, tags[0], float32(wherevalue.Field(i).Float()), nil)
+					} else if field.Type.Name() == "float64" {
+						w.Add("and", field.Name, tags[0], float64(wherevalue.Field(i).Float()), nil)
+					}
 				}
 			}
 		}
