@@ -59,7 +59,6 @@ func (c *AbuHttpContent) RequestData(obj interface{}) error {
 	json.Unmarshal([]byte(c.reqdata), &obj)
 	validator := val.New()
 	err := validator.Struct(obj)
-	fmt.Println(err)
 	if err != nil {
 		c.RespErr(6, err.Error())
 		return errors.New("参数校验错误")
