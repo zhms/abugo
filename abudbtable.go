@@ -69,7 +69,7 @@ func (c *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 						w.Add("and", field.Name, tags[0], wherevalue.Field(i).String(), tags[1])
 					} else if field.Type.Name() == "int" {
 						iv, _ := strconv.ParseInt(tags[1], 10, 64)
-						w.Add("and", field.Name, tags[0], wherevalue.Field(i).Int(), int(iv))
+						w.Add("and", field.Name, tags[0], int(wherevalue.Field(i).Int()), int(iv))
 					} else if field.Type.Name() == "int32" {
 						iv, _ := strconv.ParseInt(tags[1], 10, 64)
 						w.Add("and", field.Name, tags[0], int32(wherevalue.Field(i).Int()), int32(iv))
