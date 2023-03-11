@@ -20,16 +20,6 @@ import (
 
 type H map[string]any
 
-const (
-	HTTP_SAVE_DATA_KEY                = "http_save_api_data_key"
-	HTTP_RESPONSE_CODE_OK             = 200
-	HTTP_RESPONSE_CODE_OK_MESSAGE     = "success"
-	HTTP_RESPONSE_CODE_ERROR          = 100
-	HTTP_RESPONSE_CODE_ERROR_MESSAGE  = "fail"
-	HTTP_RESPONSE_CODE_NOAUTH         = 300
-	HTTP_RESPONSE_CODE_NOAUTH_MESSAGE = "noauth"
-)
-
 type AbuHttpContent struct {
 	gin       *gin.Context
 	TokenData string
@@ -103,24 +93,24 @@ func (ctx *AbuHttpContent) Put(key string, value interface{}) {
 	if ctx.gin.Keys == nil {
 		ctx.gin.Keys = make(map[string]interface{})
 	}
-	if ctx.gin.Keys[HTTP_SAVE_DATA_KEY] == nil {
-		ctx.gin.Keys[HTTP_SAVE_DATA_KEY] = make(map[string]interface{})
+	if ctx.gin.Keys["REPONSE_DATA"] == nil {
+		ctx.gin.Keys["REPONSE_DATA"] = make(map[string]interface{})
 	}
 	if len(key) <= 0 || key == "" {
-		ctx.gin.Keys[HTTP_SAVE_DATA_KEY] = value
+		ctx.gin.Keys["REPONSE_DATA"] = value
 		return
 	}
-	ctx.gin.Keys[HTTP_SAVE_DATA_KEY].(map[string]interface{})[key] = value
+	ctx.gin.Keys["REPONSE_DATA"].(map[string]interface{})[key] = value
 }
 
 func (ctx *AbuHttpContent) RespOK(objects ...interface{}) {
 	resp := new(HttpResponse)
-	resp.Code = HTTP_RESPONSE_CODE_OK
-	resp.Msg = HTTP_RESPONSE_CODE_OK_MESSAGE
+	resp.Code = 0
+	resp.Msg = "success"
 	if len(objects) > 0 {
 		ctx.Put("", objects[0])
 	}
-	resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
+	resp.Data = ctx.gin.Keys["REPONSE_DATA"]
 	if resp.Data == nil {
 		resp.Data = make(map[string]interface{})
 	}
@@ -131,55 +121,11 @@ func (ctx *AbuHttpContent) RespJson(obj any) {
 	ctx.gin.JSON(http.StatusOK, obj)
 }
 
-func (ctx *AbuHttpContent) RespErr(err error, errcode *int) bool {
-	(*errcode)--
-	if err != nil {
-		resp := new(HttpResponse)
-		ctx.Put("errcode", errcode)
-		ctx.Put("errmsg", err.Error())
-		resp.Code = HTTP_RESPONSE_CODE_ERROR
-		resp.Msg = HTTP_RESPONSE_CODE_ERROR_MESSAGE
-		resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
-		ctx.gin.JSON(http.StatusOK, resp)
-	}
-	return err != nil
-}
-
-func (ctx *AbuHttpContent) RespProcErr(err *map[string]interface{}) bool {
-	if err != nil && (*err)["errcode"] != nil {
-		resp := new(HttpResponse)
-		ctx.Put("errcode", InterfaceToInt64((*err)["errcode"]))
-		ctx.Put("errmsg", InterfaceToString((*err)["errmsg"]))
-		resp.Code = HTTP_RESPONSE_CODE_ERROR
-		resp.Msg = HTTP_RESPONSE_CODE_ERROR_MESSAGE
-		resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
-		ctx.gin.JSON(http.StatusOK, resp)
-		return true
-	}
-	return false
-}
-
-func (ctx *AbuHttpContent) RespErrString(err bool, errcode *int, errmsg string) bool {
-	(*errcode)--
-	if err {
-		resp := new(HttpResponse)
-		ctx.Put("errcode", errcode)
-		ctx.Put("errmsg", errmsg)
-		resp.Code = HTTP_RESPONSE_CODE_ERROR
-		resp.Msg = HTTP_RESPONSE_CODE_ERROR_MESSAGE
-		resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
-		ctx.gin.JSON(http.StatusOK, resp)
-	}
-	return err
-}
-
-func (ctx *AbuHttpContent) RespNoAuth(errcode int, errmsg string) {
+func (ctx *AbuHttpContent) RespErr(errcode int, errmsg string) {
 	resp := new(HttpResponse)
-	ctx.Put("errcode", errcode)
-	ctx.Put("errmsg", errmsg)
-	resp.Code = HTTP_RESPONSE_CODE_NOAUTH
-	resp.Msg = HTTP_RESPONSE_CODE_NOAUTH_MESSAGE
-	resp.Data = ctx.gin.Keys[HTTP_SAVE_DATA_KEY]
+	resp.Code = errcode
+	resp.Msg = errmsg
+	resp.Data = ctx.gin.Keys["REPONSE_DATA"]
 	ctx.gin.JSON(http.StatusOK, resp)
 }
 
@@ -238,18 +184,18 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 		}
 		ctx := &AbuHttpContent{gc, "", "", strbody}
 		if c.token == nil {
-			ctx.RespNoAuth(-1, "未配置token redis")
+			ctx.RespErr(1, "未配置token")
 			return
 		}
 		tokenstr := gc.GetHeader("x-token")
 		if len(tokenstr) == 0 {
-			ctx.RespNoAuth(1, "请在header填写:x-token")
+			ctx.RespErr(2, "请在header填写:x-token")
 			return
 		}
 		rediskey := fmt.Sprint(c.tokenrefix, ":", tokenstr)
 		tokendata := c.token.Get(rediskey)
 		if tokendata == nil {
-			ctx.RespNoAuth(2, "未登录或登录已过期")
+			ctx.RespErr(3, "未登录或登录已过期")
 			return
 		}
 		c.token.Expire(rediskey, c.tokenlifetime)
@@ -260,7 +206,7 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 			jbody := map[string]interface{}{}
 			err := json.Unmarshal([]byte(strbody), &jbody)
 			if err != nil {
-				ctx.RespNoAuth(-1, "参数必须是json格式")
+				ctx.RespErr(4, "参数必须是json格式")
 				return
 			}
 			jtoken := map[string]interface{}{}
@@ -282,30 +228,25 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 				json.Unmarshal([]byte(iauthdata.(string)), &authdata)
 				im, imok := authdata[m]
 				if !imok {
-					errcode := 0
-					ctx.RespErrString(true, &errcode, "权限不足")
+					ctx.RespErr(5, "权限不足")
 					return
 				}
 				is, isok := im.(map[string]interface{})[s]
 				if !isok {
-					errcode := 0
-					ctx.RespErrString(true, &errcode, "权限不足")
+					ctx.RespErr(5, "权限不足")
 					return
 				}
 				io, iook := is.(map[string]interface{})[o]
 				if !iook {
-					errcode := 0
-					ctx.RespErrString(true, &errcode, "权限不足")
+					ctx.RespErr(5, "权限不足")
 					return
 				}
 				if strings.Index(reflect.TypeOf(io).Name(), "float64") < 0 {
-					errcode := 0
-					ctx.RespErrString(true, &errcode, "权限不足")
+					ctx.RespErr(5, "权限不足")
 					return
 				}
 				if InterfaceToInt(io) != 1 {
-					errcode := 0
-					ctx.RespErrString(true, &errcode, "权限不足")
+					ctx.RespErr(5, "权限不足")
 					return
 				}
 			}
@@ -334,7 +275,7 @@ func (c *AbuHttp) GetNoAuth(path string, handler AbuHttpHandler) {
 			jbody := map[string]interface{}{}
 			err := json.Unmarshal([]byte(strbody), &jbody)
 			if err != nil {
-				ctx.RespNoAuth(-1, "参数必须是json格式")
+				ctx.RespErr(4, "参数必须是json格式")
 				return
 			}
 			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
@@ -362,18 +303,18 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler, auth string) {
 		}
 		ctx := &AbuHttpContent{gc, "", "", strbody}
 		if c.token == nil {
-			ctx.RespNoAuth(-1, "未配置token redis")
+			ctx.RespErr(1, "未配置token redis")
 			return
 		}
 		tokenstr := gc.GetHeader("x-token")
 		if len(tokenstr) == 0 {
-			ctx.RespNoAuth(1, "请在header填写:x-token")
+			ctx.RespErr(2, "请在header填写:x-token")
 			return
 		}
 		rediskey := fmt.Sprint(c.tokenrefix, ":", tokenstr)
 		tokendata := c.token.Get(rediskey)
 		if tokendata == nil {
-			ctx.RespNoAuth(2, "未登录或登录已过期")
+			ctx.RespErr(3, "未登录或登录已过期")
 			return
 		}
 		c.token.Expire(rediskey, c.tokenlifetime)
@@ -384,7 +325,7 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler, auth string) {
 			jbody := map[string]interface{}{}
 			err := json.Unmarshal([]byte(strbody), &jbody)
 			if err != nil {
-				ctx.RespNoAuth(-1, "参数必须是json格式")
+				ctx.RespErr(4, "参数必须是json格式")
 				return
 			}
 			jtoken := map[string]interface{}{}
@@ -406,30 +347,25 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler, auth string) {
 				json.Unmarshal([]byte(iauthdata.(string)), &authdata)
 				im, imok := authdata[m]
 				if !imok {
-					errcode := 0
-					ctx.RespErrString(true, &errcode, "权限不足")
+					ctx.RespErr(5, "权限不足")
 					return
 				}
 				is, isok := im.(map[string]interface{})[s]
 				if !isok {
-					errcode := 0
-					ctx.RespErrString(true, &errcode, "权限不足")
+					ctx.RespErr(5, "权限不足")
 					return
 				}
 				io, iook := is.(map[string]interface{})[o]
 				if !iook {
-					errcode := 0
-					ctx.RespErrString(true, &errcode, "权限不足")
+					ctx.RespErr(5, "权限不足")
 					return
 				}
 				if strings.Index(reflect.TypeOf(io).Name(), "float64") < 0 {
-					errcode := 0
-					ctx.RespErrString(true, &errcode, "权限不足")
+					ctx.RespErr(5, "权限不足")
 					return
 				}
 				if InterfaceToInt(io) != 1 {
-					errcode := 0
-					ctx.RespErrString(true, &errcode, "权限不足")
+					ctx.RespErr(5, "权限不足")
 					return
 				}
 			}
@@ -458,7 +394,7 @@ func (c *AbuHttp) PostNoAuth(path string, handler AbuHttpHandler) {
 			jbody := map[string]interface{}{}
 			err := json.Unmarshal([]byte(strbody), &jbody)
 			if err != nil {
-				ctx.RespNoAuth(-1, "参数必须是json格式")
+				ctx.RespErr(4, "参数必须是json格式")
 				return
 			}
 			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
