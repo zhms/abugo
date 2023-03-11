@@ -2,6 +2,7 @@ package abugo
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
@@ -30,6 +31,8 @@ import (
 
 type H map[string]any
 
+var errormap *map[string]int
+
 type AbuHttpContent struct {
 	gin       *gin.Context
 	TokenData string
@@ -56,7 +59,10 @@ func (c *AbuHttpContent) RequestData(obj interface{}) error {
 	json.Unmarshal([]byte(c.reqdata), &obj)
 	validator := val.New()
 	err := validator.Struct(obj)
-	return err
+	if err != nil {
+		c.RespErr(6, err.Error())
+	}
+	return errors.New("参数校验错误")
 }
 
 func (c *AbuHttpContent) Query(key string) string {
@@ -131,10 +137,19 @@ func (ctx *AbuHttpContent) RespJson(obj any) {
 	ctx.gin.JSON(http.StatusOK, obj)
 }
 
-func (ctx *AbuHttpContent) RespErr(errcode int, errmsg string) {
+func (ctx *AbuHttpContent) RespErr(data ...interface{}) {
 	resp := new(HttpResponse)
-	resp.Code = errcode
-	resp.Msg = errmsg
+	if len(data) == 2 {
+		resp.Code = data[0].(int)
+		resp.Msg = data[1].(string)
+	} else {
+		resp.Msg = data[0].(string)
+		code, ok := (*errormap)[resp.Msg]
+		resp.Code = code
+		if !ok {
+			resp.Code = 7
+		}
+	}
 	resp.Data = ctx.gin.Keys["REPONSE_DATA"]
 	ctx.gin.JSON(http.StatusOK, resp)
 }
@@ -171,6 +186,10 @@ func (c *AbuHttp) InitWs(url string) {
 		ctx := &AbuHttpContent{gc, "", "", ""}
 		c.ws(ctx)
 	})
+}
+
+func (c *AbuHttp) SetErrorMap(errmap *map[string]int) {
+	errormap = errmap
 }
 
 func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
