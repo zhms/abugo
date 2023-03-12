@@ -255,7 +255,7 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 			jtoken := map[string]interface{}{}
 			json.Unmarshal([]byte(ctx.TokenData), &jtoken)
 			iauthdata = jtoken["AuthData"]
-			jlog := gin.H{"Path": gc.Request.URL.Path,
+			jlog := gin.H{"ReqPath": gc.Request.URL.Path,
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
 				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp(), "Token": tokenstr}
 			strlog, _ := json.Marshal(&jlog)
@@ -321,7 +321,7 @@ func (c *AbuHttp) GetNoAuth(path string, handler AbuHttpHandler) {
 				ctx.RespErr(4, "参数必须是json格式")
 				return
 			}
-			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
+			jlog := gin.H{"ReqPath": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
@@ -374,7 +374,7 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler, auth string) {
 			jtoken := map[string]interface{}{}
 			json.Unmarshal([]byte(ctx.TokenData), &jtoken)
 			iauthdata = jtoken["AuthData"]
-			jlog := gin.H{"Path": gc.Request.URL.Path,
+			jlog := gin.H{"ReqPath": gc.Request.URL.Path,
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
 				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp(), "Token": tokenstr}
 			strlog, _ := json.Marshal(&jlog)
@@ -440,7 +440,7 @@ func (c *AbuHttp) PostNoAuth(path string, handler AbuHttpHandler) {
 				ctx.RespErr(4, "参数必须是json格式")
 				return
 			}
-			jlog := gin.H{"Path": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
+			jlog := gin.H{"ReqPath": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
 			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
