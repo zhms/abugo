@@ -100,6 +100,7 @@ type AbuHttp struct {
 	msgtype              sync.Map
 	msg_callback         sync.Map
 	default_msg_callback AbuWsDefaultMsgCallback
+	request_log_callback DBLogCallback
 }
 
 func (c *AbuHttp) Static(relativePaths string, root string) {
@@ -180,10 +181,15 @@ func (c *AbuHttp) Init(cfgkey string) {
 		},
 	}
 	if c.token != nil {
-		logdata := c.token.BLPop(fmt.Sprintf("%s:%s:requests", Project(), Module()), 100000)
-		fmt.Println(logdata)
+		go func() {
+			for {
+				logdata := c.token.BLPop(fmt.Sprintf("%s:%s:requests", Project(), Module()), 100000)
+				if c.request_log_callback != nil {
+					c.request_log_callback(logdata)
+				}
+			}
+		}()
 	}
-
 	logs.Debug("http listen:", port)
 }
 
@@ -196,6 +202,12 @@ func (c *AbuHttp) InitWs(url string) {
 
 func (c *AbuHttp) SetErrorMap(errmap *map[string]int) {
 	errormap = errmap
+}
+
+type DBLogCallback func(interface{})
+
+func (c *AbuHttp) SetLogCallback(cb DBLogCallback) {
+	c.request_log_callback = cb
 }
 
 func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
