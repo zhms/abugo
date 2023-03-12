@@ -179,6 +179,11 @@ func (c *AbuHttp) Init(cfgkey string) {
 			return true
 		},
 	}
+	if c.token != nil {
+		logdata := c.token.BLPop(fmt.Sprintf("%s:%s:requests", Project(), Module()), 100000)
+		fmt.Println(logdata)
+	}
+
 	logs.Debug("http listen:", port)
 }
 
