@@ -332,9 +332,11 @@ func (c *AbuHttp) OnGetNoAuth(path string, handler AbuHttpHandler) {
 		handler(ctx)
 	})
 }
+
 func (c *AbuHttp) OnPost(path string, handler AbuHttpHandler) {
 	c.OnPostWithAuth(path, handler, "")
 }
+
 func (c *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth string) {
 	c.gin.POST(path, func(gc *gin.Context) {
 		defer func() {
