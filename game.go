@@ -15,6 +15,7 @@ type GameUserData struct {
 	SellerId   int
 	ChannelId  int
 	UserId     int
+	NickName   string
 	Amount     float64
 	BankAmount float64
 }
@@ -114,9 +115,17 @@ func (c *GameServer) default_msg_callback(conn int64, msgid string, data interfa
 				userdata.BaseData.UserId = int(UserId)
 				userdata.BaseData.Amount = GetMapFloat64(redisuserdata, "Amount")
 				userdata.BaseData.BankAmount = GetMapFloat64(redisuserdata, "BankAmount")
+				userdata.BaseData.NickName = GetMapString(redisuserdata, "NickName")
 				userdata.ReconnectToken = AbuGuid()
 				c.conn_user.Store(conn, &userdata)
 				c.user_conn.Store(userdata.BaseData.UserId, &userdata)
+				c.SendMsgToUser(userdata.BaseData.UserId, "login", H{
+					"SellerId":  userdata.BaseData.SellerId,
+					"ChannelId": userdata.BaseData.ChannelId,
+					"UserId":    userdata.BaseData.UserId,
+					"Amount":    userdata.BaseData.Amount,
+					"NickName":  userdata.BaseData.NickName,
+				})
 				c.game_invoke(func() {
 					if c.usercomecallback != nil {
 						c.usercomecallback(userdata.BaseData.UserId)
