@@ -75,8 +75,8 @@ func (c *GameServer) game_invoke(callback GameCallback) {
 }
 
 func (c *GameServer) onwsclose(conn int64) {
-	userdata, cbok := c.conn_user.Load(conn)
-	if cbok {
+	userdata, ok := c.conn_user.Load(conn)
+	if ok {
 		c.conn_user.Delete(conn)
 		c.user_conn.Delete(userdata.(*UserData).BaseData.UserId)
 		c.game_invoke(func() {
@@ -126,11 +126,7 @@ func (c *GameServer) default_msg_callback(conn int64, msgid string, data interfa
 					"Amount":    userdata.BaseData.Amount,
 					"NickName":  userdata.BaseData.NickName,
 				})
-				c.game_invoke(func() {
-					if c.usercomecallback != nil {
-						c.usercomecallback(userdata.BaseData.UserId)
-					}
-				})
+
 			}
 		}
 	} else if msgid == "heartbeat" {
@@ -139,6 +135,16 @@ func (c *GameServer) default_msg_callback(conn int64, msgid string, data interfa
 			v := value.(*UserData)
 			v.HeartBeatCount = 0
 		}
+	} else if msgid == "ready" {
+		userdata, ok := c.conn_user.Load(conn)
+		if ok {
+			c.game_invoke(func() {
+				if c.usercomecallback != nil {
+					c.usercomecallback(userdata.(*UserData).BaseData.UserId)
+				}
+			})
+		}
+
 	}
 }
 
