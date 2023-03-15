@@ -150,7 +150,7 @@ func (c *GameServer) heart_beat() {
 				c.onwsclose(key.(int64))
 			} else {
 				v.HeartBeatCount++
-				c.http.WsSendMsg(key.(int64), "heartbeat", H{"Index": v.HeartBeatCount})
+				c.http.WsSendMsg(key.(int64), "heartbeat", H{"Count": v.HeartBeatCount})
 			}
 			return true
 		})
