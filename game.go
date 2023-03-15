@@ -103,6 +103,7 @@ func (c *GameServer) default_msg_callback(conn int64, msgid string, data interfa
 			if c.gameid != int(gameid) || c.roomlevel != int(roomlevel) || c.serverid != int(serverid) {
 				c.http.WsSendMsg(conn, "login", H{"errmsg": "登录失败,登录信息不匹配"})
 			} else {
+				c.redis.Del(rediskey)
 				UserId := GetMapInt(&jdata, "UserId")
 				useridrediskey := fmt.Sprintf("%s:hall:user:data:%d", c.project, UserId)
 				redisuserdata := c.redis.HGetAll(useridrediskey)
