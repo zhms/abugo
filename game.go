@@ -87,9 +87,9 @@ func (c *GameServer) onwsclose(conn int64) {
 }
 
 func (c *GameServer) default_msg_callback(conn int64, msgid string, data interface{}) {
-	mapdata := data.(map[string]interface{})
+	mdata := data.(map[string]interface{})
 	if msgid == `login` {
-		token := GetMapString(&mapdata, "Token")
+		token := GetMapString(&mdata, "Token")
 		rediskey := fmt.Sprintf("%s:hall:token:%s", c.project, token)
 		redisdata := c.redis.Get(rediskey)
 		if redisdata == nil {
@@ -159,9 +159,7 @@ func (c *GameServer) heart_beat() {
 }
 
 func (c *GameServer) AddUserComeCallback(callback GameUserComeCallback) {
-
 	c.usercomecallback = callback
-
 }
 
 func (c *GameServer) AddUserLeaveCallback(callback GameUserLeaveCallback) {
@@ -171,15 +169,11 @@ func (c *GameServer) AddUserLeaveCallback(callback GameUserLeaveCallback) {
 }
 
 func (c *GameServer) AddMsgCallback(msgid string, callback GameMsgCallback) {
-
 	c.msgcallbacks.Store(msgid, callback)
-
 }
 
 func (c *GameServer) RemoveMsgCallback(msgid string) {
-
 	c.msgcallbacks.Delete(msgid)
-
 }
 
 func (c *GameServer) SendMsgToUser(UserId int, msgid string, data interface{}) {

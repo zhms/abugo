@@ -146,10 +146,13 @@ func (ctx *AbuHttpContent) RespErr(data ...interface{}) {
 		resp.Msg = data[1].(string)
 	} else {
 		resp.Msg = data[0].(string)
-		code, ok := (*errormap)[resp.Msg]
-		resp.Code = code
-		if !ok {
-			resp.Code = -1
+		resp.Code = -1
+		if errormap != nil {
+			code, ok := (*errormap)[resp.Msg]
+			resp.Code = code
+			if !ok {
+				resp.Code = -1
+			}
 		}
 	}
 	resp.Data = ctx.gin.Keys["REPONSE_DATA"]
