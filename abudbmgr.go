@@ -58,22 +58,22 @@ func (c *AbuDb) conn() *sql.DB {
 	return c.db.DB()
 }
 
-func (c *AbuDb) Query(query string, args ...any) *[]map[string]interface{} {
+func (c *AbuDb) Query(query string, args ...any) (*[]map[string]interface{}, error) {
 	data, err := c.db.DB().Query(query, args...)
 	if err != nil {
 		logs.Error(err)
-		return nil
+		return nil, err
 	}
-	return c.GetResult(data)
+	return c.GetResult(data), nil
 }
 
-func (c *AbuDb) Exec(query string, args ...any) *sql.Result {
+func (c *AbuDb) Exec(query string, args ...any) (*sql.Result, error) {
 	data, err := c.db.DB().Exec(query, args...)
 	if err != nil {
 		logs.Error(err)
-		return nil
+		return nil, err
 	}
-	return &data
+	return &data, nil
 }
 
 func (c *AbuDb) Table(tablename string) *AbuDbTable {
