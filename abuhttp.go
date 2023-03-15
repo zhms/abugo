@@ -210,7 +210,11 @@ func (c *AbuHttp) SetLogCallback(cb DBLogCallback) {
 	c.request_log_callback = cb
 }
 
-func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
+func (c *AbuHttp) OnGet(path string, handler AbuHttpHandler) {
+	c.OnGetWithAuth(path, handler, "")
+}
+
+func (c *AbuHttp) OnGetWithAuth(path string, handler AbuHttpHandler, auth string) {
 	c.gin.GET(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
@@ -298,7 +302,7 @@ func (c *AbuHttp) Get(path string, handler AbuHttpHandler, auth string) {
 	})
 }
 
-func (c *AbuHttp) GetNoAuth(path string, handler AbuHttpHandler) {
+func (c *AbuHttp) OnGetNoAuth(path string, handler AbuHttpHandler) {
 	c.gin.GET(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
@@ -328,8 +332,10 @@ func (c *AbuHttp) GetNoAuth(path string, handler AbuHttpHandler) {
 		handler(ctx)
 	})
 }
-
-func (c *AbuHttp) Post(path string, handler AbuHttpHandler, auth string) {
+func (c *AbuHttp) OnPost(path string, handler AbuHttpHandler) {
+	c.OnPostWithAuth(path, handler, "")
+}
+func (c *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth string) {
 	c.gin.POST(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
@@ -417,7 +423,7 @@ func (c *AbuHttp) Post(path string, handler AbuHttpHandler, auth string) {
 	})
 }
 
-func (c *AbuHttp) PostNoAuth(path string, handler AbuHttpHandler) {
+func (c *AbuHttp) OnPostNoAuth(path string, handler AbuHttpHandler) {
 	c.gin.POST(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
