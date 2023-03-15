@@ -66,8 +66,8 @@ func (c *GameServer) Init() {
 	c.game_thread = make(chan GameCallback, 100000)
 	c.http.WsDefaultMsgCallback(c.default_msg_callback)
 	c.http.WsAddCloseCallback(c.onwsclose)
-	go c.heart_beat()
 	go c.game_runner()
+	//go c.heart_beat()
 }
 
 func (c *GameServer) game_invoke(callback GameCallback) {
@@ -129,12 +129,6 @@ func (c *GameServer) default_msg_callback(conn int64, msgid string, data interfa
 
 			}
 		}
-	} else if msgid == "heartbeat" {
-		value, ok := c.conn_user.Load(conn)
-		if ok {
-			v := value.(*UserData)
-			v.HeartBeatCount = 0
-		}
 	} else if msgid == "ready" {
 		userdata, ok := c.conn_user.Load(conn)
 		if ok {
@@ -145,6 +139,12 @@ func (c *GameServer) default_msg_callback(conn int64, msgid string, data interfa
 			})
 		}
 
+	} else if msgid == "heartbeat" {
+		value, ok := c.conn_user.Load(conn)
+		if ok {
+			v := value.(*UserData)
+			v.HeartBeatCount = 0
+		}
 	}
 }
 
