@@ -52,14 +52,14 @@ type IServer interface {
 }
 
 type IGameScene interface {
-	Init(*IServer)
+	Init(IServer)
 	Release()
 }
 
-type AllocDeskCallback func() *IGameScene
+type AllocDeskCallback func() IGameScene
 
 type GameDesk struct {
-	Desk *IGameScene
+	Desk IGameScene
 }
 
 type GameMsgCallback func(int, *map[string]interface{})
