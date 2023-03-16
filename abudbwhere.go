@@ -14,21 +14,21 @@ type AbuDbWhere struct {
 	length int
 }
 
-func (c *AbuDbWhere) Add(opt string, field string, operator string, val interface{}, invalidval interface{}) *AbuDbWhere {
-	if c.Data == nil {
-		c.Data = make(map[string]interface{})
+func (this *AbuDbWhere) Add(opt string, field string, operator string, val interface{}, invalidval interface{}) *AbuDbWhere {
+	if this.Data == nil {
+		this.Data = make(map[string]interface{})
 	}
 	if val != invalidval {
-		if c.length == 0 {
+		if this.length == 0 {
 			opt = ""
 		}
-		c.Data[fmt.Sprintf("%s %s@%d@%s", opt, field, c.length, operator)] = val
-		c.length++
+		this.Data[fmt.Sprintf("%s %s@%d@%s", opt, field, this.length, operator)] = val
+		this.length++
 	}
-	return c
+	return this
 }
 
-func (c *AbuDbWhere) Sql() (string, []interface{}) {
+func (this *AbuDbWhere) Sql() (string, []interface{}) {
 	wstr := ""
 	wv := []interface{}{}
 	type FieldValue struct {
@@ -38,7 +38,7 @@ func (c *AbuDbWhere) Sql() (string, []interface{}) {
 		Opt   string
 	}
 	order := []FieldValue{}
-	for k, v := range c.Data {
+	for k, v := range this.Data {
 		ks := strings.Split(k, "@")
 		opt := "="
 		if len(ks) == 3 {
@@ -65,10 +65,10 @@ func (c *AbuDbWhere) Sql() (string, []interface{}) {
 	return wstr, wv
 }
 
-func (c *AbuDbWhere) EndWith(words string) *AbuDbWhere {
-	if c.Data == nil {
-		c.Data = make(map[string]interface{})
+func (this *AbuDbWhere) EndWith(words string) *AbuDbWhere {
+	if this.Data == nil {
+		this.Data = make(map[string]interface{})
 	}
-	c.Data[words] = 0
-	return c
+	this.Data[words] = 0
+	return this
 }

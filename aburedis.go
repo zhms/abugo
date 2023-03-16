@@ -25,8 +25,8 @@ type AbuRedis struct {
 	mu                 *sync.RWMutex
 }
 
-func (c *AbuRedis) Init(prefix string) {
-	if c.redispool != nil {
+func (this *AbuRedis) Init(prefix string) {
+	if this.redispool != nil {
 		return
 	}
 	host := GetConfigString(fmt.Sprint(prefix, ".host"), true, "")
@@ -36,7 +36,7 @@ func (c *AbuRedis) Init(prefix string) {
 	maxidle := GetConfigInt(fmt.Sprint(prefix, ".maxidle"), true, 0)
 	maxactive := GetConfigInt(fmt.Sprint(prefix, ".maxactive"), true, 0)
 	idletimeout := GetConfigInt(fmt.Sprint(prefix, ".idletimeout"), true, 0)
-	c.redispool = &redis.Pool{
+	this.redispool = &redis.Pool{
 		MaxIdle:     maxidle,
 		MaxActive:   maxactive,
 		IdleTimeout: time.Duration(idletimeout) * time.Second,
@@ -61,30 +61,30 @@ func (c *AbuRedis) Init(prefix string) {
 		logs.Error(err)
 		panic(err)
 	}
-	c.pubconnection = new(redis.PubSubConn)
-	c.pubconnection.Conn = conn
-	c.recving = false
-	c.subscribecallbacks = make(map[string]AbuRedisSubCallback)
-	c.mu = new(sync.RWMutex)
+	this.pubconnection = new(redis.PubSubConn)
+	this.pubconnection.Conn = conn
+	this.recving = false
+	this.subscribecallbacks = make(map[string]AbuRedisSubCallback)
+	this.mu = new(sync.RWMutex)
 	logs.Debug("连接redis 成功:", host, port, db)
 }
 
-func (c *AbuRedis) getcallback(channel string) AbuRedisSubCallback {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.subscribecallbacks[channel]
+func (this *AbuRedis) getcallback(channel string) AbuRedisSubCallback {
+	this.mu.Lock()
+	defer this.mu.Unlock()
+	return this.subscribecallbacks[channel]
 }
 
-func (c *AbuRedis) subscribe(channels ...string) {
-	c.pubconnection.Subscribe(redis.Args{}.AddFlat(channels)...)
-	if !c.recving {
+func (this *AbuRedis) subscribe(channels ...string) {
+	this.pubconnection.Subscribe(redis.Args{}.AddFlat(channels)...)
+	if !this.recving {
 		go func() {
 			for {
-				imsg := c.pubconnection.Receive()
+				imsg := this.pubconnection.Receive()
 				msgtype := reflect.TypeOf(imsg).Name()
 				if msgtype == "Message" {
 					msg := imsg.(redis.Message)
-					callback := c.getcallback(msg.Channel)
+					callback := this.getcallback(msg.Channel)
 					if callback != nil {
 						callback(string(msg.Data))
 					}
@@ -94,15 +94,15 @@ func (c *AbuRedis) subscribe(channels ...string) {
 	}
 }
 
-func (c *AbuRedis) Subscribe(channel string, callback AbuRedisSubCallback) {
-	c.mu.Lock()
-	c.subscribecallbacks[channel] = callback
-	c.mu.Unlock()
-	c.subscribe(channel)
+func (this *AbuRedis) Subscribe(channel string, callback AbuRedisSubCallback) {
+	this.mu.Lock()
+	this.subscribecallbacks[channel] = callback
+	this.mu.Unlock()
+	this.subscribe(channel)
 }
 
-func (c *AbuRedis) Publish(k, v interface{}) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) Publish(k, v interface{}) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	output, _ := json.Marshal(&v)
 	_, err := conn.Do("publish", k, output)
@@ -113,8 +113,8 @@ func (c *AbuRedis) Publish(k, v interface{}) error {
 	return nil
 }
 
-func (c *AbuRedis) Get(key string) interface{} {
-	conn := c.redispool.Get()
+func (this *AbuRedis) Get(key string) interface{} {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("get", key)
 	if err != nil {
@@ -124,8 +124,8 @@ func (c *AbuRedis) Get(key string) interface{} {
 	return ret
 }
 
-func (c *AbuRedis) Set(key string, value interface{}) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) Set(key string, value interface{}) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	output, _ := json.Marshal(&value)
 	_, err := conn.Do("set", key, output)
@@ -136,8 +136,8 @@ func (c *AbuRedis) Set(key string, value interface{}) error {
 	return nil
 }
 
-func (c *AbuRedis) SetString(key string, value string) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) SetString(key string, value string) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	_, err := conn.Do("set", key, value)
 	if err != nil {
@@ -147,8 +147,8 @@ func (c *AbuRedis) SetString(key string, value string) error {
 	return nil
 }
 
-func (c *AbuRedis) SetEx(key string, expire int, value interface{}) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) SetEx(key string, expire int, value interface{}) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	output, _ := json.Marshal(&value)
 	_, err := conn.Do("setex", key, expire, string(output))
@@ -158,8 +158,8 @@ func (c *AbuRedis) SetEx(key string, expire int, value interface{}) error {
 	}
 	return nil
 }
-func (c *AbuRedis) SetStringEx(key string, expire int, value string) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) SetStringEx(key string, expire int, value string) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	_, err := conn.Do("setex", key, expire, value)
 	if err != nil {
@@ -169,8 +169,8 @@ func (c *AbuRedis) SetStringEx(key string, expire int, value string) error {
 	return nil
 }
 
-func (c *AbuRedis) Del(key string) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) Del(key string) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	_, err := conn.Do("del", key)
 	if err != nil {
@@ -180,8 +180,8 @@ func (c *AbuRedis) Del(key string) error {
 	return nil
 }
 
-func (c *AbuRedis) Expire(key string, expire int) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) Expire(key string, expire int) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	_, err := conn.Do("expire", key, expire)
 	if err != nil {
@@ -191,8 +191,8 @@ func (c *AbuRedis) Expire(key string, expire int) error {
 	return nil
 }
 
-func (c *AbuRedis) HSet(key string, field string, value interface{}) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) HSet(key string, field string, value interface{}) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	output, _ := json.Marshal(&value)
 	_, err := conn.Do("hset", key, field, string(output))
@@ -203,8 +203,8 @@ func (c *AbuRedis) HSet(key string, field string, value interface{}) error {
 	return nil
 }
 
-func (c *AbuRedis) HSetString(key string, field string, value string) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) HSetString(key string, field string, value string) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	_, err := conn.Do("hset", key, field, value)
 	if err != nil {
@@ -214,8 +214,8 @@ func (c *AbuRedis) HSetString(key string, field string, value string) error {
 	return nil
 }
 
-func (c *AbuRedis) HGet(key string, field string) interface{} {
-	conn := c.redispool.Get()
+func (this *AbuRedis) HGet(key string, field string) interface{} {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("hget", key, field)
 	if err != nil {
@@ -225,8 +225,8 @@ func (c *AbuRedis) HGet(key string, field string) interface{} {
 	return ret
 }
 
-func (c *AbuRedis) HDel(key string, field string) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) HDel(key string, field string) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	_, err := conn.Do("hdel", key, field)
 	if err != nil {
@@ -236,8 +236,8 @@ func (c *AbuRedis) HDel(key string, field string) error {
 	return nil
 }
 
-func (c *AbuRedis) HKeys(key string) []string {
-	conn := c.redispool.Get()
+func (this *AbuRedis) HKeys(key string) []string {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	keys, err := conn.Do("hkeys", key)
 	ikeys := keys.([]interface{})
@@ -252,8 +252,8 @@ func (c *AbuRedis) HKeys(key string) []string {
 	return strkeys
 }
 
-func (c *AbuRedis) SAdd(key string, value interface{}) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) SAdd(key string, value interface{}) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	output, _ := json.Marshal(&value)
 	_, err := conn.Do("sadd", key, string(output))
@@ -264,8 +264,8 @@ func (c *AbuRedis) SAdd(key string, value interface{}) error {
 	return nil
 }
 
-func (c *AbuRedis) SAddString(key string, value string) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) SAddString(key string, value string) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	_, err := conn.Do("sadd", key, value)
 	if err != nil {
@@ -274,8 +274,8 @@ func (c *AbuRedis) SAddString(key string, value string) error {
 	}
 	return nil
 }
-func (c *AbuRedis) HSetObject(key string, object map[string]interface{}) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) HSetObject(key string, object map[string]interface{}) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	params := []interface{}{}
 	params = append(params, key)
@@ -301,8 +301,8 @@ func (c *AbuRedis) HSetObject(key string, object map[string]interface{}) error {
 	return nil
 }
 
-func (c *AbuRedis) HGetAll(key string) *map[string]interface{} {
-	conn := c.redispool.Get()
+func (this *AbuRedis) HGetAll(key string) *map[string]interface{} {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("hgetall", key)
 	if err != nil {
@@ -322,8 +322,8 @@ func (c *AbuRedis) HGetAll(key string) *map[string]interface{} {
 	return &mapret
 }
 
-func (c *AbuRedis) RPush(key string, vals ...interface{}) error {
-	conn := c.redispool.Get()
+func (this *AbuRedis) RPush(key string, vals ...interface{}) error {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	data := []interface{}{}
 	data = append(data, key)
@@ -336,8 +336,8 @@ func (c *AbuRedis) RPush(key string, vals ...interface{}) error {
 	return nil
 }
 
-func (c *AbuRedis) LIndex(key string, idx int) interface{} {
-	conn := c.redispool.Get()
+func (this *AbuRedis) LIndex(key string, idx int) interface{} {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("lindex", key, idx)
 	if err != nil {
@@ -347,8 +347,8 @@ func (c *AbuRedis) LIndex(key string, idx int) interface{} {
 	return ret
 }
 
-func (c *AbuRedis) BLPop(key string, timeout int) interface{} {
-	conn := c.redispool.Get()
+func (this *AbuRedis) BLPop(key string, timeout int) interface{} {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("blpop", key, timeout)
 	if err != nil {
@@ -362,8 +362,8 @@ func (c *AbuRedis) BLPop(key string, timeout int) interface{} {
 	return string(arr[1].([]byte))
 }
 
-func (c *AbuRedis) SMembers(key string) []interface{} {
-	conn := c.redispool.Get()
+func (this *AbuRedis) SMembers(key string) []interface{} {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("smembers", key)
 	if err != nil {
@@ -377,8 +377,8 @@ func (c *AbuRedis) SMembers(key string) []interface{} {
 	return arr
 }
 
-func (c *AbuRedis) HMGet(key string, fields ...interface{}) *map[string]interface{} {
-	conn := c.redispool.Get()
+func (this *AbuRedis) HMGet(key string, fields ...interface{}) *map[string]interface{} {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	data := []interface{}{}
 	data = append(data, key)
@@ -402,8 +402,8 @@ func (c *AbuRedis) HMGet(key string, fields ...interface{}) *map[string]interfac
 	return &mapret
 }
 
-func (c *AbuRedis) SRem(key string, vals ...interface{}) []interface{} {
-	conn := c.redispool.Get()
+func (this *AbuRedis) SRem(key string, vals ...interface{}) []interface{} {
+	conn := this.redispool.Get()
 	defer conn.Close()
 	data := []interface{}{}
 	data = append(data, key)

@@ -28,47 +28,47 @@ type AbuDb struct {
 	logmode         bool
 }
 
-func (c *AbuDb) Init(prefix string) {
-	c.user = GetConfigString(fmt.Sprint(prefix, ".user"), true, "")
-	c.password = GetConfigString(fmt.Sprint(prefix, ".password"), true, "")
-	c.host = GetConfigString(fmt.Sprint(prefix, ".host"), true, "")
-	c.database = GetConfigString(fmt.Sprint(prefix, ".database"), true, "")
-	c.port = GetConfigInt(fmt.Sprint(prefix, ".port"), true, 0)
-	c.connmaxlifetime = GetConfigInt(fmt.Sprint(prefix, ".connmaxlifetime"), true, 0)
-	c.connmaxidletime = GetConfigInt(fmt.Sprint(prefix, ".connmaxidletime"), true, 0)
-	c.connmaxidle = GetConfigInt(fmt.Sprint(prefix, ".connmaxidle"), true, 0)
-	c.connmaxopen = GetConfigInt(fmt.Sprint(prefix, ".connmaxopen"), true, 0)
-	str := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", c.user, c.password, c.host, c.port, c.database)
+func (this *AbuDb) Init(prefix string) {
+	this.user = GetConfigString(fmt.Sprint(prefix, ".user"), true, "")
+	this.password = GetConfigString(fmt.Sprint(prefix, ".password"), true, "")
+	this.host = GetConfigString(fmt.Sprint(prefix, ".host"), true, "")
+	this.database = GetConfigString(fmt.Sprint(prefix, ".database"), true, "")
+	this.port = GetConfigInt(fmt.Sprint(prefix, ".port"), true, 0)
+	this.connmaxlifetime = GetConfigInt(fmt.Sprint(prefix, ".connmaxlifetime"), true, 0)
+	this.connmaxidletime = GetConfigInt(fmt.Sprint(prefix, ".connmaxidletime"), true, 0)
+	this.connmaxidle = GetConfigInt(fmt.Sprint(prefix, ".connmaxidle"), true, 0)
+	this.connmaxopen = GetConfigInt(fmt.Sprint(prefix, ".connmaxopen"), true, 0)
+	str := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", this.user, this.password, this.host, this.port, this.database)
 	db, err := gorm.Open("mysql", str)
 	if err != nil {
 		logs.Error(err)
 		panic(err)
 	}
-	db.DB().SetMaxIdleConns(c.connmaxidle)
-	db.DB().SetMaxOpenConns(c.connmaxopen)
-	db.DB().SetConnMaxIdleTime(time.Second * time.Duration(c.connmaxidletime))
-	db.DB().SetConnMaxLifetime(time.Second * time.Duration(c.connmaxlifetime))
-	c.db = db
-	c.logmode = viper.GetBool(fmt.Sprint(prefix, ".logmode"))
-	db.LogMode(c.logmode)
-	logs.Debug("连接数据库成功:", c.host, c.port, c.database)
+	db.DB().SetMaxIdleConns(this.connmaxidle)
+	db.DB().SetMaxOpenConns(this.connmaxopen)
+	db.DB().SetConnMaxIdleTime(time.Second * time.Duration(this.connmaxidletime))
+	db.DB().SetConnMaxLifetime(time.Second * time.Duration(this.connmaxlifetime))
+	this.db = db
+	this.logmode = viper.GetBool(fmt.Sprint(prefix, ".logmode"))
+	db.LogMode(this.logmode)
+	logs.Debug("连接数据库成功:", this.host, this.port, this.database)
 }
 
-func (c *AbuDb) conn() *sql.DB {
-	return c.db.DB()
+func (this *AbuDb) conn() *sql.DB {
+	return this.db.DB()
 }
 
-func (c *AbuDb) Query(query string, args ...any) (*[]map[string]interface{}, error) {
-	data, err := c.db.DB().Query(query, args...)
+func (this *AbuDb) Query(query string, args ...any) (*[]map[string]interface{}, error) {
+	data, err := this.db.DB().Query(query, args...)
 	if err != nil {
 		logs.Error(err)
 		return nil, err
 	}
-	return c.GetResult(data), nil
+	return this.GetResult(data), nil
 }
 
-func (c *AbuDb) Exec(query string, args ...any) (*sql.Result, error) {
-	data, err := c.db.DB().Exec(query, args...)
+func (this *AbuDb) Exec(query string, args ...any) (*sql.Result, error) {
+	data, err := this.db.DB().Exec(query, args...)
 	if err != nil {
 		logs.Error(err)
 		return nil, err
@@ -76,12 +76,12 @@ func (c *AbuDb) Exec(query string, args ...any) (*sql.Result, error) {
 	return &data, nil
 }
 
-func (c *AbuDb) Table(tablename string) *AbuDbTable {
-	dbtable := AbuDbTable{tablename: tablename, selectstr: "*", db: c}
+func (this *AbuDb) Table(tablename string) *AbuDbTable {
+	dbtable := AbuDbTable{tablename: tablename, selectstr: "*", db: this}
 	return &dbtable
 }
 
-func (c *AbuDb) CallProcedure(procname string, args ...interface{}) (*map[string]interface{}, error) {
+func (this *AbuDb) CallProcedure(procname string, args ...interface{}) (*map[string]interface{}, error) {
 	sql := ""
 	for i := 0; i < len(args); i++ {
 		sql += "?,"
@@ -91,7 +91,7 @@ func (c *AbuDb) CallProcedure(procname string, args ...interface{}) (*map[string
 	}
 	sql = fmt.Sprintf("call %s(%s)", procname, sql)
 
-	dbresult, err := c.db.DB().Query(sql, args...)
+	dbresult, err := this.db.DB().Query(sql, args...)
 	if err != nil {
 		logs.Error(err)
 		return nil, err
@@ -139,19 +139,19 @@ func (c *AbuDb) CallProcedure(procname string, args ...interface{}) (*map[string
 	return nil, nil
 }
 
-func (c *AbuDb) GetResult(rows *sql.Rows) *[]map[string]interface{} {
+func (this *AbuDb) GetResult(rows *sql.Rows) *[]map[string]interface{} {
 	if rows == nil {
 		return nil
 	}
 	data := []map[string]interface{}{}
 	for rows.Next() {
-		data = append(data, *c.getone(rows))
+		data = append(data, *this.getone(rows))
 	}
 	rows.Close()
 	return &data
 }
 
-func (c *AbuDb) getone(rows *sql.Rows) *map[string]interface{} {
+func (this *AbuDb) getone(rows *sql.Rows) *map[string]interface{} {
 	data := make(map[string]interface{})
 	fields, _ := rows.Columns()
 	scans := make([]interface{}, len(fields))

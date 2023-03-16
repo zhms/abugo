@@ -31,29 +31,29 @@ type AbuDbTable struct {
 	dicwv     []interface{}
 }
 
-func (c *AbuDbTable) Conn(db *sql.DB) *AbuDbTable {
-	c.dbconn = db
-	return c
+func (this *AbuDbTable) Conn(db *sql.DB) *AbuDbTable {
+	this.dbconn = db
+	return this
 }
 
-func (c *AbuDbTable) TableName(TableName string) *AbuDbTable {
-	c.tablename = TableName
-	return c
+func (this *AbuDbTable) TableName(TableName string) *AbuDbTable {
+	this.tablename = TableName
+	return this
 }
 
-func (c *AbuDbTable) Select(SelectStr string) *AbuDbTable {
-	c.selectstr = SelectStr
-	return c
+func (this *AbuDbTable) Select(SelectStr string) *AbuDbTable {
+	this.selectstr = SelectStr
+	return this
 }
 
-func (c *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
+func (this *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 	wheretype := reflect.TypeOf(where[0])
 	if strings.Index(wheretype.Name(), "AbuDbWhere") >= 0 {
-		c.where = where[0].(AbuDbWhere).Data
+		this.where = where[0].(AbuDbWhere).Data
 	} else if wheretype.Name() == "string" {
-		c.dicsql = where[0].(string)
+		this.dicsql = where[0].(string)
 		for i := 1; i < len(where); i++ {
-			c.dicwv = append(c.dicwv, where[i])
+			this.dicwv = append(this.dicwv, where[i])
 		}
 	} else {
 		w := AbuDbWhere{}
@@ -100,34 +100,34 @@ func (c *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 				}
 			}
 		}
-		c.where = w.Data
+		this.where = w.Data
 	}
-	return c
+	return this
 }
 
-func (c *AbuDbTable) OrderBy(orderby string) *AbuDbTable {
-	c.orderby = orderby
-	return c
+func (this *AbuDbTable) OrderBy(orderby string) *AbuDbTable {
+	this.orderby = orderby
+	return this
 }
 
-func (c *AbuDbTable) Limit(limit int) *AbuDbTable {
-	c.limit = limit
-	return c
+func (this *AbuDbTable) Limit(limit int) *AbuDbTable {
+	this.limit = limit
+	return this
 }
 
-func (c *AbuDbTable) Join(join string) *AbuDbTable {
-	c.join = join
-	return c
+func (this *AbuDbTable) Join(join string) *AbuDbTable {
+	this.join = join
+	return this
 }
 
-func (c *AbuDbTable) GetOne() (*map[string]interface{}, error) {
-	sql, wv := c.get_select_sql()
+func (this *AbuDbTable) GetOne() (*map[string]interface{}, error) {
+	sql, wv := this.get_select_sql()
 	sql += " limit 1"
-	conn := c.dbconn
+	conn := this.dbconn
 	if conn == nil {
-		conn = c.db.conn()
+		conn = this.db.conn()
 	}
-	if c.db.logmode {
+	if this.db.logmode {
 		logs.Debug(sql, wv...)
 	}
 	dbresult, err := conn.Query(sql, wv...)
@@ -136,7 +136,7 @@ func (c *AbuDbTable) GetOne() (*map[string]interface{}, error) {
 		return nil, err
 	}
 	if dbresult.Next() {
-		one := c.getone(dbresult)
+		one := this.getone(dbresult)
 		dbresult.Close()
 		return one, nil
 	}
@@ -144,13 +144,13 @@ func (c *AbuDbTable) GetOne() (*map[string]interface{}, error) {
 	return nil, nil
 }
 
-func (c *AbuDbTable) GetList() (*[]map[string]interface{}, error) {
-	sql, wv := c.get_select_sql()
-	conn := c.dbconn
+func (this *AbuDbTable) GetList() (*[]map[string]interface{}, error) {
+	sql, wv := this.get_select_sql()
+	conn := this.dbconn
 	if conn == nil {
-		conn = c.db.conn()
+		conn = this.db.conn()
 	}
-	if c.db.logmode {
+	if this.db.logmode {
 		logs.Debug(sql, wv...)
 	}
 	dbresult, err := conn.Query(sql, wv...)
@@ -160,20 +160,20 @@ func (c *AbuDbTable) GetList() (*[]map[string]interface{}, error) {
 	}
 	data := []map[string]interface{}{}
 	for dbresult.Next() {
-		data = append(data, *c.getone(dbresult))
+		data = append(data, *this.getone(dbresult))
 	}
 	dbresult.Close()
 	return &data, nil
 }
 
-func (c *AbuDbTable) Update(update map[string]interface{}) (int64, error) {
-	c.update = update
-	sql, wv := c.get_update_sql()
-	conn := c.dbconn
+func (this *AbuDbTable) Update(update map[string]interface{}) (int64, error) {
+	this.update = update
+	sql, wv := this.get_update_sql()
+	conn := this.dbconn
 	if conn == nil {
-		conn = c.db.conn()
+		conn = this.db.conn()
 	}
-	if c.db.logmode {
+	if this.db.logmode {
 		logs.Debug(sql, wv...)
 	}
 	dbresult, err := conn.Exec(sql, wv...)
@@ -184,14 +184,14 @@ func (c *AbuDbTable) Update(update map[string]interface{}) (int64, error) {
 	return dbresult.RowsAffected()
 }
 
-func (c *AbuDbTable) Insert(insert map[string]interface{}) (int64, error) {
-	c.insert = insert
-	sql, wv := c.get_insert_sql()
-	conn := c.dbconn
+func (this *AbuDbTable) Insert(insert map[string]interface{}) (int64, error) {
+	this.insert = insert
+	sql, wv := this.get_insert_sql()
+	conn := this.dbconn
 	if conn == nil {
-		conn = c.db.conn()
+		conn = this.db.conn()
 	}
-	if c.db.logmode {
+	if this.db.logmode {
 		logs.Debug(sql, wv...)
 	}
 	dbresult, err := conn.Exec(sql, wv...)
@@ -202,13 +202,13 @@ func (c *AbuDbTable) Insert(insert map[string]interface{}) (int64, error) {
 	return dbresult.LastInsertId()
 }
 
-func (c *AbuDbTable) Delete() (int64, error) {
-	sql, wv := c.get_delete_sql()
-	conn := c.dbconn
+func (this *AbuDbTable) Delete() (int64, error) {
+	sql, wv := this.get_delete_sql()
+	conn := this.dbconn
 	if conn == nil {
-		conn = c.db.conn()
+		conn = this.db.conn()
 	}
-	if c.db.logmode {
+	if this.db.logmode {
 		logs.Debug(sql, wv...)
 	}
 	dbresult, err := conn.Exec(sql, wv...)
@@ -219,14 +219,14 @@ func (c *AbuDbTable) Delete() (int64, error) {
 	return dbresult.RowsAffected()
 }
 
-func (c *AbuDbTable) Replace(insert map[string]interface{}) (int64, error) {
-	c.insert = insert
-	sql, wv := c.get_replace_sql()
-	conn := c.dbconn
+func (this *AbuDbTable) Replace(insert map[string]interface{}) (int64, error) {
+	this.insert = insert
+	sql, wv := this.get_replace_sql()
+	conn := this.dbconn
 	if conn == nil {
-		conn = c.db.conn()
+		conn = this.db.conn()
 	}
-	if c.db.logmode {
+	if this.db.logmode {
 		logs.Debug(sql, wv...)
 	}
 	dbresult, err := conn.Exec(sql, wv...)
@@ -237,7 +237,7 @@ func (c *AbuDbTable) Replace(insert map[string]interface{}) (int64, error) {
 	return dbresult.LastInsertId()
 }
 
-func (c *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, orderby string) (*[]map[string]interface{}, int64) {
+func (this *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, orderby string) (*[]map[string]interface{}, int64) {
 	sql := ""
 	wstr := ""
 	wv := []interface{}{}
@@ -248,7 +248,7 @@ func (c *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, order
 		Opt   string
 	}
 	order := []FieldValue{}
-	for k, v := range c.where {
+	for k, v := range this.where {
 		ks := strings.Split(k, "@")
 		opt := "="
 		if len(ks) == 3 {
@@ -272,19 +272,19 @@ func (c *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, order
 			wstr += v.Field
 		}
 	}
-	if len(c.dicsql) > 0 {
-		wstr = c.dicsql
-		wv = c.dicwv
+	if len(this.dicsql) > 0 {
+		wstr = this.dicsql
+		wv = this.dicwv
 	}
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("SELECT COUNT(*) AS Total FROM %s where %s", c.tablename, wstr)
+		sql = fmt.Sprintf("SELECT COUNT(*) AS Total FROM %s where %s", this.tablename, wstr)
 	} else {
-		sql = fmt.Sprintf("SELECT COUNT(*) AS Total FROM %s %s", c.tablename, wstr)
+		sql = fmt.Sprintf("SELECT COUNT(*) AS Total FROM %s %s", this.tablename, wstr)
 	}
-	if c.db.logmode {
+	if this.db.logmode {
 		logs.Debug(sql, wv...)
 	}
-	dbresult, err := c.db.conn().Query(sql, wv...)
+	dbresult, err := this.db.conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
 		return &[]map[string]interface{}{}, 0
@@ -298,32 +298,32 @@ func (c *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, order
 	}
 
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s  ", c.selectstr, c.tablename, c.join, wstr)
+		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s  ", this.selectstr, this.tablename, this.join, wstr)
 	} else {
-		sql = fmt.Sprintf("SELECT %s FROM %s %s ", c.selectstr, c.tablename, c.join)
+		sql = fmt.Sprintf("SELECT %s FROM %s %s ", this.selectstr, this.tablename, this.join)
 	}
 	orderbyex := "(" + orderbyfield + ") " + orderby
 	sql += fmt.Sprintf("order by %s", orderbyex)
 	sql += " "
 	sql += fmt.Sprintf("limit %d offset %d", PageSize, (Page-1)*PageSize)
 
-	if c.db.logmode {
+	if this.db.logmode {
 		logs.Debug(sql, wv...)
 	}
-	dbresult, err = c.db.conn().Query(sql, wv...)
+	dbresult, err = this.db.conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
 		return &[]map[string]interface{}{}, 0
 	}
 	datas := []map[string]interface{}{}
 	for dbresult.Next() {
-		datas = append(datas, *c.getone(dbresult))
+		datas = append(datas, *this.getone(dbresult))
 	}
 	dbresult.Close()
 	return &datas, int64(total)
 }
 
-func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, orderby string) (*[]map[string]interface{}, int64) {
+func (this *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, orderby string) (*[]map[string]interface{}, int64) {
 	if Page <= 0 {
 		Page = 1
 	}
@@ -340,7 +340,7 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 		Opt   string
 	}
 	order := []FieldValue{}
-	for k, v := range c.where {
+	for k, v := range this.where {
 		ks := strings.Split(k, "@")
 		opt := "="
 		if len(ks) == 3 {
@@ -365,19 +365,19 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 		}
 	}
 	orderby = strings.ToLower(orderby)
-	if len(c.dicsql) > 0 {
-		wstr = c.dicsql
-		wv = c.dicwv
+	if len(this.dicsql) > 0 {
+		wstr = this.dicsql
+		wv = this.dicwv
 	}
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("SELECT COUNT(%s) AS Total FROM %s where %s", orderbyfield, c.tablename, wstr)
+		sql = fmt.Sprintf("SELECT COUNT(%s) AS Total FROM %s where %s", orderbyfield, this.tablename, wstr)
 	} else {
-		sql = fmt.Sprintf("SELECT COUNT(%s) AS Total FROM %s %s", orderbyfield, c.tablename, wstr)
+		sql = fmt.Sprintf("SELECT COUNT(%s) AS Total FROM %s %s", orderbyfield, this.tablename, wstr)
 	}
-	if c.db.logmode {
+	if this.db.logmode {
 		logs.Debug(sql, wv...)
 	}
-	dbresult, err := c.db.conn().Query(sql, wv...)
+	dbresult, err := this.db.conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
 		return &[]map[string]interface{}{}, 0
@@ -392,14 +392,14 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 
 	orderbyex := orderbyfield + " " + orderby
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s where %s order by %s limit %d,1", orderbyfield, c.tablename, wstr, orderbyex, (Page-1)*PageSize)
+		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s where %s order by %s limit %d,1", orderbyfield, this.tablename, wstr, orderbyex, (Page-1)*PageSize)
 	} else {
-		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s %s order by %s limit %d,1", orderbyfield, c.tablename, wstr, orderbyex, (Page-1)*PageSize)
+		sql = fmt.Sprintf("SELECT %s AS MinValue FROM %s %s order by %s limit %d,1", orderbyfield, this.tablename, wstr, orderbyex, (Page-1)*PageSize)
 	}
-	if c.db.logmode {
+	if this.db.logmode {
 		logs.Debug(sql, wv...)
 	}
-	dbresult, err = c.db.conn().Query(sql, wv...)
+	dbresult, err = this.db.conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
 		return &[]map[string]interface{}{}, 0
@@ -426,31 +426,31 @@ func (c *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, ord
 	}
 	wv = twv
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s  ", c.selectstr, c.tablename, c.join, wstr)
+		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s  ", this.selectstr, this.tablename, this.join, wstr)
 	} else {
-		sql = fmt.Sprintf("SELECT %s FROM %s %s ", c.selectstr, c.tablename, c.join)
+		sql = fmt.Sprintf("SELECT %s FROM %s %s ", this.selectstr, this.tablename, this.join)
 	}
 	sql += fmt.Sprintf("order by %s", orderbyex)
 	sql += " "
 
 	sql += fmt.Sprintf("limit %d", PageSize)
-	if c.db.logmode {
+	if this.db.logmode {
 		logs.Debug(sql, wv...)
 	}
-	dbresult, err = c.db.conn().Query(sql, wv...)
+	dbresult, err = this.db.conn().Query(sql, wv...)
 	if err != nil {
 		logs.Error(err)
 		return &[]map[string]interface{}{}, 0
 	}
 	datas := []map[string]interface{}{}
 	for dbresult.Next() {
-		datas = append(datas, *c.getone(dbresult))
+		datas = append(datas, *this.getone(dbresult))
 	}
 	dbresult.Close()
 	return &datas, int64(total)
 }
 
-func (c *AbuDbTable) getone(rows *sql.Rows) *map[string]interface{} {
+func (this *AbuDbTable) getone(rows *sql.Rows) *map[string]interface{} {
 	data := make(map[string]interface{})
 	fields, _ := rows.Columns()
 	scans := make([]interface{}, len(fields))
@@ -490,7 +490,7 @@ func (c *AbuDbTable) getone(rows *sql.Rows) *map[string]interface{} {
 	return &data
 }
 
-func (c *AbuDbTable) get_select_sql() (string, []interface{}) {
+func (this *AbuDbTable) get_select_sql() (string, []interface{}) {
 	sql := ""
 	wstr := ""
 	wv := []interface{}{}
@@ -501,7 +501,7 @@ func (c *AbuDbTable) get_select_sql() (string, []interface{}) {
 		Opt   string
 	}
 	order := []FieldValue{}
-	for k, v := range c.where {
+	for k, v := range this.where {
 		ks := strings.Split(k, "@")
 		opt := "="
 		if len(ks) == 3 {
@@ -525,27 +525,27 @@ func (c *AbuDbTable) get_select_sql() (string, []interface{}) {
 			wstr += v.Field
 		}
 	}
-	if len(c.dicsql) > 0 {
-		wstr = c.dicsql
-		wv = c.dicwv
+	if len(this.dicsql) > 0 {
+		wstr = this.dicsql
+		wv = this.dicwv
 	}
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s ", c.selectstr, c.tablename, c.join, wstr)
+		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s ", this.selectstr, this.tablename, this.join, wstr)
 	} else {
-		sql = fmt.Sprintf("SELECT %s FROM %s %s", c.selectstr, c.tablename, c.join)
+		sql = fmt.Sprintf("SELECT %s FROM %s %s", this.selectstr, this.tablename, this.join)
 	}
-	if len(c.orderby) > 0 {
+	if len(this.orderby) > 0 {
 		sql += "order by "
-		sql += c.orderby
+		sql += this.orderby
 		sql += " "
 	}
-	if c.limit > 0 {
-		sql += fmt.Sprintf("limit %d ", c.limit)
+	if this.limit > 0 {
+		sql += fmt.Sprintf("limit %d ", this.limit)
 	}
 	return sql, wv
 }
 
-func (c *AbuDbTable) get_delete_sql() (string, []interface{}) {
+func (this *AbuDbTable) get_delete_sql() (string, []interface{}) {
 	sql := ""
 	wstr := ""
 	wv := []interface{}{}
@@ -556,7 +556,7 @@ func (c *AbuDbTable) get_delete_sql() (string, []interface{}) {
 		Opt   string
 	}
 	order := []FieldValue{}
-	for k, v := range c.where {
+	for k, v := range this.where {
 		ks := strings.Split(k, "@")
 		opt := "="
 		if len(ks) == 3 {
@@ -580,22 +580,22 @@ func (c *AbuDbTable) get_delete_sql() (string, []interface{}) {
 			wstr += v.Field
 		}
 	}
-	if len(c.dicsql) > 0 {
-		wstr = c.dicsql
-		wv = c.dicwv
+	if len(this.dicsql) > 0 {
+		wstr = this.dicsql
+		wv = this.dicwv
 	}
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("DELETE FROM %s  WHERE %s ", c.tablename, wstr)
+		sql = fmt.Sprintf("DELETE FROM %s  WHERE %s ", this.tablename, wstr)
 	} else {
-		sql = fmt.Sprintf("DELETE FROM  %s ", c.tablename)
+		sql = fmt.Sprintf("DELETE FROM  %s ", this.tablename)
 	}
 	return sql, wv
 }
-func (c *AbuDbTable) get_update_sql() (string, []interface{}) {
+func (this *AbuDbTable) get_update_sql() (string, []interface{}) {
 	sql := ""
 	ustr := ""
 	uv := []interface{}{}
-	for k, v := range c.update {
+	for k, v := range this.update {
 		ustr += fmt.Sprintf(" %s = ?,", k)
 		uv = append(uv, v)
 	}
@@ -611,7 +611,7 @@ func (c *AbuDbTable) get_update_sql() (string, []interface{}) {
 		Opt   string
 	}
 	order := []FieldValue{}
-	for k, v := range c.where {
+	for k, v := range this.where {
 		ks := strings.Split(k, "@")
 		opt := "="
 		if len(ks) == 3 {
@@ -635,60 +635,60 @@ func (c *AbuDbTable) get_update_sql() (string, []interface{}) {
 			wstr += v.Field
 		}
 	}
-	if len(c.dicsql) > 0 {
-		wstr = c.dicsql
-		for i := 0; i < len(c.dicwv); i++ {
-			uv = append(uv, c.dicwv[i])
+	if len(this.dicsql) > 0 {
+		wstr = this.dicsql
+		for i := 0; i < len(this.dicwv); i++ {
+			uv = append(uv, this.dicwv[i])
 		}
 	}
 	if len(wstr) > 0 {
-		sql = fmt.Sprintf("UPDATE %s SET%s WHERE %s ", c.tablename, ustr, wstr)
+		sql = fmt.Sprintf("UPDATE %s SET%s WHERE %s ", this.tablename, ustr, wstr)
 	} else {
-		sql = fmt.Sprintf("UPDATE %s SET%s  ", c.tablename, ustr)
+		sql = fmt.Sprintf("UPDATE %s SET%s  ", this.tablename, ustr)
 	}
 	return sql, uv
 }
 
-func (c *AbuDbTable) get_insert_sql() (string, []interface{}) {
+func (this *AbuDbTable) get_insert_sql() (string, []interface{}) {
 	sql := ""
 	istr := ""
 	ivstr := ""
 	iv := []interface{}{}
-	for k, v := range c.insert {
+	for k, v := range this.insert {
 		istr += fmt.Sprintf("%s,", k)
 		ivstr += "?,"
 		iv = append(iv, v)
 	}
-	if len(c.dicsql) > 0 {
-		istr = c.dicsql
-		iv = c.dicwv
+	if len(this.dicsql) > 0 {
+		istr = this.dicsql
+		iv = this.dicwv
 	}
 	if len(istr) > 0 {
 		istr = strings.TrimRight(istr, ",")
 		ivstr = strings.TrimRight(ivstr, ",")
 	}
-	sql = fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s)", c.tablename, istr, ivstr)
+	sql = fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s)", this.tablename, istr, ivstr)
 	return sql, iv
 }
 
-func (c *AbuDbTable) get_replace_sql() (string, []interface{}) {
+func (this *AbuDbTable) get_replace_sql() (string, []interface{}) {
 	sql := ""
 	istr := ""
 	ivstr := ""
 	iv := []interface{}{}
-	for k, v := range c.insert {
+	for k, v := range this.insert {
 		istr += fmt.Sprintf("%s,", k)
 		ivstr += "?,"
 		iv = append(iv, v)
 	}
-	if len(c.dicsql) > 0 {
-		istr = c.dicsql
-		iv = c.dicwv
+	if len(this.dicsql) > 0 {
+		istr = this.dicsql
+		iv = this.dicwv
 	}
 	if len(istr) > 0 {
 		istr = strings.TrimRight(istr, ",")
 		ivstr = strings.TrimRight(ivstr, ",")
 	}
-	sql = fmt.Sprintf("REPLACE INTO %s(%s) VALUES(%s)", c.tablename, istr, ivstr)
+	sql = fmt.Sprintf("REPLACE INTO %s(%s) VALUES(%s)", this.tablename, istr, ivstr)
 	return sql, iv
 }

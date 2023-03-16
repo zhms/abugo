@@ -55,27 +55,27 @@ func abuhttpcors() gin.HandlerFunc {
 	}
 }
 
-func (c *AbuHttpContent) RequestData(obj interface{}) error {
-	json.Unmarshal([]byte(c.reqdata), &obj)
+func (this *AbuHttpContent) RequestData(obj interface{}) error {
+	json.Unmarshal([]byte(this.reqdata), &obj)
 	validator := val.New()
 	err := validator.Struct(obj)
 	if err != nil {
-		c.RespErr(6, err.Error())
+		this.RespErr(6, err.Error())
 		return errors.New("参数校验错误")
 	}
 	return nil
 }
 
-func (c *AbuHttpContent) Query(key string) string {
-	return c.gin.Query(key)
+func (this *AbuHttpContent) Query(key string) string {
+	return this.gin.Query(key)
 }
 
-func (c *AbuHttpContent) GetIp() string {
-	return c.gin.ClientIP()
+func (this *AbuHttpContent) GetIp() string {
+	return this.gin.ClientIP()
 }
 
-func (c *AbuHttpContent) Gin() *gin.Context {
-	return c.gin
+func (this *AbuHttpContent) Gin() *gin.Context {
+	return this.gin
 }
 
 type AbuHttpHandler func(*AbuHttpContent)
@@ -103,8 +103,8 @@ type AbuHttp struct {
 	request_log_callback DBLogCallback
 }
 
-func (c *AbuHttp) Static(relativePaths string, root string) {
-	c.gin.Static(relativePaths, root)
+func (this *AbuHttp) Static(relativePaths string, root string) {
+	this.gin.Static(relativePaths, root)
 }
 
 func (ctx *AbuHttpContent) Put(key string, value interface{}) {
@@ -163,32 +163,32 @@ func (ctx *AbuHttpContent) SaveUploadedFile(file *multipart.FileHeader, dst stri
 	return ctx.gin.SaveUploadedFile(file, dst)
 }
 
-func (c *AbuHttp) Init(cfgkey string) {
+func (this *AbuHttp) Init(cfgkey string) {
 	port := GetConfigInt(cfgkey+".port", true, 0)
-	c.gin = gin.New()
-	c.gin.Use(abuhttpcors())
+	this.gin = gin.New()
+	this.gin.Use(abuhttpcors())
 	tokenhost := viper.GetString("server.token.host")
 	if len(tokenhost) > 0 {
-		c.tokenrefix = fmt.Sprint(GetConfigString("server.project", true, ""), ":", GetConfigString("server.module", true, ""), ":token")
-		c.token = new(AbuRedis)
-		c.tokenlifetime = GetConfigInt("server.token.lifetime", true, 0)
-		c.token.Init("server.token")
+		this.tokenrefix = fmt.Sprint(GetConfigString("server.project", true, ""), ":", GetConfigString("server.module", true, ""), ":token")
+		this.token = new(AbuRedis)
+		this.tokenlifetime = GetConfigInt("server.token.lifetime", true, 0)
+		this.token.Init("server.token")
 	}
 	go func() {
 		bind := fmt.Sprint("0.0.0.0:", port)
-		c.gin.Run(bind)
+		this.gin.Run(bind)
 	}()
-	c.upgrader = websocket.Upgrader{
+	this.upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
 	}
-	if c.token != nil {
+	if this.token != nil {
 		go func() {
 			for {
-				logdata := c.token.BLPop(fmt.Sprintf("%s:%s:requests", Project(), Module()), 100000)
-				if c.request_log_callback != nil {
-					c.request_log_callback(logdata)
+				logdata := this.token.BLPop(fmt.Sprintf("%s:%s:requests", Project(), Module()), 100000)
+				if this.request_log_callback != nil {
+					this.request_log_callback(logdata)
 				}
 			}
 		}()
@@ -196,29 +196,29 @@ func (c *AbuHttp) Init(cfgkey string) {
 	logs.Debug("http listen:", port)
 }
 
-func (c *AbuHttp) InitWs(url string) {
-	c.gin.GET(url, func(gc *gin.Context) {
+func (this *AbuHttp) InitWs(url string) {
+	this.gin.GET(url, func(gc *gin.Context) {
 		ctx := &AbuHttpContent{gc, "", "", ""}
-		c.ws(ctx)
+		this.ws(ctx)
 	})
 }
 
-func (c *AbuHttp) SetErrorMap(errmap *map[string]int) {
+func (this *AbuHttp) SetErrorMap(errmap *map[string]int) {
 	errormap = errmap
 }
 
 type DBLogCallback func(interface{})
 
-func (c *AbuHttp) SetLogCallback(cb DBLogCallback) {
-	c.request_log_callback = cb
+func (this *AbuHttp) SetLogCallback(cb DBLogCallback) {
+	this.request_log_callback = cb
 }
 
-func (c *AbuHttp) OnGet(path string, handler AbuHttpHandler) {
-	c.OnGetWithAuth(path, handler, "")
+func (this *AbuHttp) OnGet(path string, handler AbuHttpHandler) {
+	this.OnGetWithAuth(path, handler, "")
 }
 
-func (c *AbuHttp) OnGetWithAuth(path string, handler AbuHttpHandler, auth string) {
-	c.gin.GET(path, func(gc *gin.Context) {
+func (this *AbuHttp) OnGetWithAuth(path string, handler AbuHttpHandler, auth string) {
+	this.gin.GET(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
 			if err != nil {
@@ -233,7 +233,7 @@ func (c *AbuHttp) OnGetWithAuth(path string, handler AbuHttpHandler, auth string
 			strbody = "{}"
 		}
 		ctx := &AbuHttpContent{gc, "", "", strbody}
-		if c.token == nil {
+		if this.token == nil {
 			ctx.RespErr(1, "未配置token")
 			return
 		}
@@ -242,17 +242,17 @@ func (c *AbuHttp) OnGetWithAuth(path string, handler AbuHttpHandler, auth string
 			ctx.RespErr(2, "请在header填写:x-token")
 			return
 		}
-		rediskey := fmt.Sprint(c.tokenrefix, ":", tokenstr)
-		tokendata := c.token.Get(rediskey)
+		rediskey := fmt.Sprint(this.tokenrefix, ":", tokenstr)
+		tokendata := this.token.Get(rediskey)
 		if tokendata == nil {
 			ctx.RespErr(3, "未登录或登录已过期")
 			return
 		}
-		c.token.Expire(rediskey, c.tokenlifetime)
+		this.token.Expire(rediskey, this.tokenlifetime)
 		ctx.TokenData = string(tokendata.([]uint8))
 		ctx.Token = tokenstr
 		var iauthdata interface{}
-		if c.token != nil {
+		if this.token != nil {
 			jbody := map[string]interface{}{}
 			err := json.Unmarshal([]byte(strbody), &jbody)
 			if err != nil {
@@ -266,7 +266,7 @@ func (c *AbuHttp) OnGetWithAuth(path string, handler AbuHttpHandler, auth string
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
 				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp(), "Token": tokenstr}
 			strlog, _ := json.Marshal(&jlog)
-			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
+			this.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
 		if len(auth) > 0 {
 			spauth := strings.Split(auth, ".")
@@ -305,8 +305,8 @@ func (c *AbuHttp) OnGetWithAuth(path string, handler AbuHttpHandler, auth string
 	})
 }
 
-func (c *AbuHttp) OnGetNoAuth(path string, handler AbuHttpHandler) {
-	c.gin.GET(path, func(gc *gin.Context) {
+func (this *AbuHttp) OnGetNoAuth(path string, handler AbuHttpHandler) {
+	this.gin.GET(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
 			if err != nil {
@@ -321,7 +321,7 @@ func (c *AbuHttp) OnGetNoAuth(path string, handler AbuHttpHandler) {
 			strbody = "{}"
 		}
 		ctx := &AbuHttpContent{gc, "", "", strbody}
-		if c.token != nil {
+		if this.token != nil {
 			jbody := map[string]interface{}{}
 			err := json.Unmarshal([]byte(strbody), &jbody)
 			if err != nil {
@@ -330,18 +330,18 @@ func (c *AbuHttp) OnGetNoAuth(path string, handler AbuHttpHandler) {
 			}
 			jlog := gin.H{"ReqPath": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
-			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
+			this.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
 		handler(ctx)
 	})
 }
 
-func (c *AbuHttp) OnPost(path string, handler AbuHttpHandler) {
-	c.OnPostWithAuth(path, handler, "")
+func (this *AbuHttp) OnPost(path string, handler AbuHttpHandler) {
+	this.OnPostWithAuth(path, handler, "")
 }
 
-func (c *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth string) {
-	c.gin.POST(path, func(gc *gin.Context) {
+func (this *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth string) {
+	this.gin.POST(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
 			if err != nil {
@@ -356,7 +356,7 @@ func (c *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth strin
 			strbody = "{}"
 		}
 		ctx := &AbuHttpContent{gc, "", "", strbody}
-		if c.token == nil {
+		if this.token == nil {
 			ctx.RespErr(1, "未配置token redis")
 			return
 		}
@@ -365,17 +365,17 @@ func (c *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth strin
 			ctx.RespErr(2, "请在header填写:x-token")
 			return
 		}
-		rediskey := fmt.Sprint(c.tokenrefix, ":", tokenstr)
-		tokendata := c.token.Get(rediskey)
+		rediskey := fmt.Sprint(this.tokenrefix, ":", tokenstr)
+		tokendata := this.token.Get(rediskey)
 		if tokendata == nil {
 			ctx.RespErr(3, "未登录或登录已过期")
 			return
 		}
-		c.token.Expire(rediskey, c.tokenlifetime)
+		this.token.Expire(rediskey, this.tokenlifetime)
 		ctx.TokenData = string(tokendata.([]uint8))
 		ctx.Token = tokenstr
 		var iauthdata interface{}
-		if c.token != nil {
+		if this.token != nil {
 			jbody := map[string]interface{}{}
 			err := json.Unmarshal([]byte(strbody), &jbody)
 			if err != nil {
@@ -389,7 +389,7 @@ func (c *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth strin
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
 				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp(), "Token": tokenstr}
 			strlog, _ := json.Marshal(&jlog)
-			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
+			this.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
 		if len(auth) > 0 {
 			spauth := strings.Split(auth, ".")
@@ -428,8 +428,8 @@ func (c *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth strin
 	})
 }
 
-func (c *AbuHttp) OnPostNoAuth(path string, handler AbuHttpHandler) {
-	c.gin.POST(path, func(gc *gin.Context) {
+func (this *AbuHttp) OnPostNoAuth(path string, handler AbuHttpHandler) {
+	this.gin.POST(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
 			if err != nil {
@@ -444,7 +444,7 @@ func (c *AbuHttp) OnPostNoAuth(path string, handler AbuHttpHandler) {
 			strbody = "{}"
 		}
 		ctx := &AbuHttpContent{gc, "", "", strbody}
-		if c.token != nil {
+		if this.token != nil {
 			jbody := map[string]interface{}{}
 			err := json.Unmarshal([]byte(strbody), &jbody)
 			if err != nil {
@@ -453,41 +453,41 @@ func (c *AbuHttp) OnPostNoAuth(path string, handler AbuHttpHandler) {
 			}
 			jlog := gin.H{"ReqPath": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
 			strlog, _ := json.Marshal(&jlog)
-			c.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
+			this.token.RPush(fmt.Sprintf("%s:%s:requests", Project(), Module()), string(strlog))
 		}
 		handler(ctx)
 	})
 }
 
-func (c *AbuHttp) SetToken(key string, data interface{}) {
-	if c.token == nil {
+func (this *AbuHttp) SetToken(key string, data interface{}) {
+	if this.token == nil {
 		return
 	}
-	c.token.SetEx(fmt.Sprint(c.tokenrefix, ":", key), c.tokenlifetime, data)
+	this.token.SetEx(fmt.Sprint(this.tokenrefix, ":", key), this.tokenlifetime, data)
 }
 
-func (c *AbuHttp) DelToken(key string) {
-	if c.token == nil {
+func (this *AbuHttp) DelToken(key string) {
+	if this.token == nil {
 		return
 	}
 	if key == "" {
 		return
 	}
-	c.token.Del(fmt.Sprint(c.tokenrefix, ":", key))
+	this.token.Del(fmt.Sprint(this.tokenrefix, ":", key))
 }
 
-func (c *AbuHttp) GetToken(key string) interface{} {
-	if c.token == nil {
+func (this *AbuHttp) GetToken(key string) interface{} {
+	if this.token == nil {
 		return nil
 	}
-	return c.token.Get(fmt.Sprint(c.tokenrefix, ":", key))
+	return this.token.Get(fmt.Sprint(this.tokenrefix, ":", key))
 }
 
-func (c *AbuHttp) RenewToken(key string) {
-	if c.token == nil {
+func (this *AbuHttp) RenewToken(key string) {
+	if this.token == nil {
 		return
 	}
-	c.token.Expire(fmt.Sprint(c.tokenrefix, ":", key), c.tokenlifetime)
+	this.token.Expire(fmt.Sprint(this.tokenrefix, ":", key), this.tokenlifetime)
 }
 
 type AbuWsCallback func(int64)
@@ -498,29 +498,29 @@ type abumsgdata struct {
 	Data  interface{} `json:"data"`
 }
 
-func (c *AbuHttp) ws(ctx *AbuHttpContent) {
-	conn, err := c.upgrader.Upgrade(ctx.Gin().Writer, ctx.Gin().Request, nil)
+func (this *AbuHttp) ws(ctx *AbuHttpContent) {
+	conn, err := this.upgrader.Upgrade(ctx.Gin().Writer, ctx.Gin().Request, nil)
 	if err != nil {
 		logs.Error(err)
 		return
 	}
 	defer conn.Close()
 	id := AbuId()
-	c.idx_conn.Store(id, conn)
-	c.conn_idx.Store(conn, id)
-	if c.connect_callback != nil {
-		c.connect_callback(id)
+	this.idx_conn.Store(id, conn)
+	this.conn_idx.Store(conn, id)
+	if this.connect_callback != nil {
+		this.connect_callback(id)
 	}
 	for {
 		mt, message, err := conn.ReadMessage()
-		c.msgtype.Store(id, mt)
+		this.msgtype.Store(id, mt)
 		if err != nil {
 			break
 		}
 		md := abumsgdata{}
 		err = json.Unmarshal(message, &md)
 		if err == nil {
-			callback, cbok := c.msg_callback.Load(md.MsgId)
+			callback, cbok := this.msg_callback.Load(md.MsgId)
 			if cbok {
 				go func() {
 					defer func() {
@@ -535,7 +535,7 @@ func (c *AbuHttp) ws(ctx *AbuHttpContent) {
 					cb(id, md.Data)
 				}()
 			} else {
-				if c.default_msg_callback != nil {
+				if this.default_msg_callback != nil {
 					go func() {
 						defer func() {
 							err := recover()
@@ -545,28 +545,28 @@ func (c *AbuHttp) ws(ctx *AbuHttpContent) {
 								logs.Error(string(stack))
 							}
 						}()
-						c.default_msg_callback(id, md.MsgId, md.Data)
+						this.default_msg_callback(id, md.MsgId, md.Data)
 					}()
 				}
 			}
 		}
 	}
-	_, ccerr := c.idx_conn.Load(id)
+	_, ccerr := this.idx_conn.Load(id)
 	if ccerr {
-		c.idx_conn.Delete(id)
-		c.conn_idx.Delete(conn)
-		if c.close_callback != nil {
-			c.close_callback(id)
+		this.idx_conn.Delete(id)
+		this.conn_idx.Delete(conn)
+		if this.close_callback != nil {
+			this.close_callback(id)
 		}
 	}
 }
 
-func (c *AbuHttp) WsSendMsg(id int64, msgid string, data interface{}) {
-	iconn, connok := c.idx_conn.Load(id)
+func (this *AbuHttp) WsSendMsg(id int64, msgid string, data interface{}) {
+	iconn, connok := this.idx_conn.Load(id)
 	if !connok {
 		return
 	}
-	imt, mtok := c.msgtype.Load(id)
+	imt, mtok := this.msgtype.Load(id)
 	if !mtok {
 		imt = 1
 		mtok = true
@@ -583,29 +583,29 @@ func (c *AbuHttp) WsSendMsg(id int64, msgid string, data interface{}) {
 	}
 }
 
-func (c *AbuHttp) WsClose(id int64) {
-	iconn, connok := c.idx_conn.Load(id)
+func (this *AbuHttp) WsClose(id int64) {
+	iconn, connok := this.idx_conn.Load(id)
 	if connok {
 		conn := iconn.(*websocket.Conn)
-		c.conn_idx.Delete(conn)
-		c.idx_conn.Delete(id)
-		c.msgtype.Delete(id)
+		this.conn_idx.Delete(conn)
+		this.idx_conn.Delete(id)
+		this.msgtype.Delete(id)
 		conn.Close()
 	}
 }
 
-func (c *AbuHttp) WsAddConnectCallback(callback AbuWsCallback) {
-	c.connect_callback = callback
+func (this *AbuHttp) WsAddConnectCallback(callback AbuWsCallback) {
+	this.connect_callback = callback
 }
 
-func (c *AbuHttp) WsAddMsgCallback(msgid string, callback AbuWsMsgCallback) {
-	c.msg_callback.Store(msgid, callback)
+func (this *AbuHttp) WsAddMsgCallback(msgid string, callback AbuWsMsgCallback) {
+	this.msg_callback.Store(msgid, callback)
 }
 
-func (c *AbuHttp) WsDefaultMsgCallback(callback AbuWsDefaultMsgCallback) {
-	c.default_msg_callback = callback
+func (this *AbuHttp) WsDefaultMsgCallback(callback AbuWsDefaultMsgCallback) {
+	this.default_msg_callback = callback
 }
 
-func (c *AbuHttp) WsAddCloseCallback(callback AbuWsCallback) {
-	c.close_callback = callback
+func (this *AbuHttp) WsAddCloseCallback(callback AbuWsCallback) {
+	this.close_callback = callback
 }

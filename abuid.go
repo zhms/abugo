@@ -27,22 +27,22 @@ type snowflake struct {
 	step      int64
 }
 
-func (n *snowflake) GetId() int64 {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (this *snowflake) GetId() int64 {
+	this.mu.Lock()
+	defer this.mu.Unlock()
 	now := time.Now().UnixNano() / 1e6
-	if n.timestamp == now {
-		n.step++
-		if n.step > snow_stepMax {
-			for now <= n.timestamp {
+	if this.timestamp == now {
+		this.step++
+		if this.step > snow_stepMax {
+			for now <= this.timestamp {
 				now = time.Now().UnixNano() / 1e6
 			}
 		}
 	} else {
-		n.step = 0
+		this.step = 0
 	}
-	n.timestamp = now
-	result := (now-snow_epoch)<<snow_timeShift | (n.node << snow_nodeShift) | (n.step)
+	this.timestamp = now
+	result := (now-snow_epoch)<<snow_timeShift | (this.node << snow_nodeShift) | (this.step)
 	return result
 }
 
