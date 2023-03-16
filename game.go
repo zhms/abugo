@@ -10,7 +10,6 @@ import (
 )
 
 type GameCallback func()
-
 type GameUserData struct {
 	SellerId   int
 	ChannelId  int
@@ -20,11 +19,47 @@ type GameUserData struct {
 	BankAmount float64
 }
 
+type GameInfo struct {
+	DeskCount     int //多少个桌子
+	ChairCount    int //桌子多少个座位
+	MinStartCount int //每个桌子至少需要几人才可以开始游戏
+	/*
+		1.老虎机,一个人一个桌子
+		2.百人游戏,所有人一个桌子
+		3.斗地主,牛牛,多人一个桌子
+		4.捕鱼,随时来,随时走,随时开始
+	*/
+	MakeType int
+}
+
 type UserData struct {
 	BaseData       GameUserData
 	Connection     int64
 	ReconnectToken string
 	HeartBeatCount int
+	Desk           *GameDesk
+}
+
+type IServer interface {
+	AddUserComeCallback(callback GameUserComeCallback)
+	AddUserLeaveCallback(callback GameUserLeaveCallback)
+	AddMsgCallback(msgid string, callback GameMsgCallback)
+	RemoveMsgCallback(msgid string)
+	SendMsgToUser(UserId int, msgid string, data interface{})
+	SendMsgToAll(msgid string, data interface{})
+	KickOutUser(UserId int)
+	GetUserData(UserId int)
+}
+
+type IGameDesk interface {
+	Init(*IServer)
+	Release()
+}
+
+type AllocDeskCallback func() *IGameDesk
+
+type GameDesk struct {
+	Desk *IGameDesk
 }
 
 type GameMsgCallback func(int, *map[string]interface{})
@@ -45,12 +80,17 @@ type GameServer struct {
 	gameid            int
 	roomlevel         int
 	serverid          int
+	gameinfo          GameInfo
+	alloccallback     AllocDeskCallback
+	gamedesk          []*GameDesk
 }
 
-func (c *GameServer) Init() {
+func (c *GameServer) Init(gameinfo GameInfo, callback AllocDeskCallback) {
 	Init()
 	c.project = Project()
 	c.module = Module()
+	c.gameinfo = gameinfo
+	c.alloccallback = callback
 
 	c.db = new(AbuDb)
 	c.db.Init("server.db")
