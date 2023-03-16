@@ -51,15 +51,15 @@ type IServer interface {
 	GetUserData(UserId int)
 }
 
-type IGameDesk interface {
+type IGameScene interface {
 	Init(*IServer)
 	Release()
 }
 
-type AllocDeskCallback func() *IGameDesk
+type AllocDeskCallback func() *IGameScene
 
 type GameDesk struct {
-	Desk *IGameDesk
+	Desk *IGameScene
 }
 
 type GameMsgCallback func(int, *map[string]interface{})
@@ -219,9 +219,7 @@ func (c *GameServer) AddUserComeCallback(callback GameUserComeCallback) {
 }
 
 func (c *GameServer) AddUserLeaveCallback(callback GameUserLeaveCallback) {
-
 	c.userleavecallback = callback
-
 }
 
 func (c *GameServer) AddMsgCallback(msgid string, callback GameMsgCallback) {
