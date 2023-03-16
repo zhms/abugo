@@ -67,6 +67,7 @@ func Init() {
 	viper.AddConfigPath("./config")
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
+	go timertick()
 	err := viper.ReadInConfig()
 	if err != nil {
 		logs.Error(err)
