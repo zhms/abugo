@@ -49,6 +49,9 @@ type IServer interface {
 	GetUserData(UserId int) *UserData
 	AddMsgCallback(msgid string, callback GameMsgCallback)
 	RemoveMsgCallback(msgid string)
+	SetInterval(int, int, TimerCallback) int64
+	SetTimer(int, TimerCallback) int64
+	KillTimer(int64)
 }
 
 type IGameScene interface {
@@ -432,4 +435,26 @@ func (this *GameDesk) SendMsgToAll(msgid string, data interface{}) {
 			this.GameSrv.SendMsgToUser(user.BaseData.UserId, msgid, data)
 		}
 	}
+}
+
+func (this *GameDesk) SetInterval(delay int, count int, callback TimerCallback) int64 {
+	id := AddTimerInterval(delay, count, func(i int64) {
+		this.GameSrv.game_invoke(func() {
+			callback(i)
+		})
+	})
+	return id
+}
+
+func (this *GameDesk) SetTimer(delay int, callback TimerCallback) int64 {
+	id := AddTimer(delay, func(i int64) {
+		this.GameSrv.game_invoke(func() {
+			callback(i)
+		})
+	})
+	return id
+}
+
+func (this *GameDesk) KillTimer(timerid int64) {
+	KillTimer(timerid)
 }
