@@ -148,8 +148,8 @@ func (this *AbuRedis) GetExMap(key string, callback RedisGetExCallback) *map[str
 	} else {
 		t, data := callback()
 		this.SetEx(key, t, data)
-		jdata := data.(map[string]interface{})
-		return &jdata
+		jdata := data.(*map[string]interface{})
+		return jdata
 	}
 }
 
@@ -162,8 +162,8 @@ func (this *AbuRedis) GetExArray(key string, callback RedisGetExCallback) *[]int
 	} else {
 		t, data := callback()
 		this.SetEx(key, t, data)
-		jdata := data.([]interface{})
-		return &jdata
+		jdata := data.(*[]interface{})
+		return jdata
 	}
 }
 
