@@ -188,13 +188,13 @@ func (this *GameServer) default_msg_callback(conn int64, msgid string, data inte
 				this.conn_user.Store(conn, &userdata)
 				this.user_conn.Store(userdata.BaseData.UserId, &userdata)
 				this.SendMsgToUser(userdata.BaseData.UserId, "login", H{
-					"SellerId":  userdata.BaseData.SellerId,
-					"ChannelId": userdata.BaseData.ChannelId,
-					"UserId":    userdata.BaseData.UserId,
-					"Amount":    userdata.BaseData.Amount,
-					"NickName":  userdata.BaseData.NickName,
+					"SellerId":       userdata.BaseData.SellerId,
+					"ChannelId":      userdata.BaseData.ChannelId,
+					"UserId":         userdata.BaseData.UserId,
+					"Amount":         userdata.BaseData.Amount,
+					"NickName":       userdata.BaseData.NickName,
+					"ReconnectToken": userdata.ReconnectToken,
 				})
-
 			}
 		}
 	} else if msgid == "ready" {

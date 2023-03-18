@@ -27,6 +27,8 @@ import (
 		3. 未登录或者登录过期了
 		4. 参数格式错误,参数必须是json格式
 		5. 权限不足
+		6. 参数校验错误
+		7. 重复请求
 */
 
 type H map[string]any
@@ -245,7 +247,8 @@ func (this *AbuHttp) OnGetWithAuth(path string, handler AbuHttpHandler, auth str
 		keystr := fmt.Sprintf("get%v%v", gc.Request.URL.Path, tokenstr)
 		reqid := Md5(keystr)
 		lockkey := fmt.Sprint("lock:", reqid)
-		if !this.token.SetNx(lockkey, 1) {
+		if !this.token.SetNxString(lockkey, "1") {
+			ctx.RespErr(7, "请勿重复请求")
 			return
 		}
 		this.token.Expire(lockkey, 10)
@@ -384,7 +387,8 @@ func (this *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth st
 		keystr := fmt.Sprintf("post%v%v", gc.Request.URL.Path, tokenstr)
 		reqid := Md5(keystr)
 		lockkey := fmt.Sprint("lock:", reqid)
-		if !this.token.SetNx(lockkey, 1) {
+		if !this.token.SetNxString(lockkey, "1") {
+			ctx.RespErr(7, "请勿重复请求")
 			return
 		}
 		this.token.Expire(lockkey, 10)
