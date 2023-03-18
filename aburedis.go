@@ -486,10 +486,13 @@ func (this *AbuRedis) SRem(key string, vals ...interface{}) []interface{} {
 }
 
 func (this *AbuRedis) GetLock(key string, maxtime int) bool {
-
-	return true
+	r := this.SetNxString(key, "1")
+	if r {
+		this.Expire(key, maxtime)
+	}
+	return r
 }
 
-func (this *AbuRedis) ReleaseLock(key string) bool {
-	return true
+func (this *AbuRedis) ReleaseLock(key string) {
+	this.Del(key)
 }

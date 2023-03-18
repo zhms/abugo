@@ -37,7 +37,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	crand "crypto/rand"
@@ -54,7 +53,6 @@ var keyprefix string
 var project string
 var module string
 var env string
-var repeat_control sync.Map
 
 func Init() {
 	mrand.Seed(time.Now().Unix())
@@ -82,7 +80,6 @@ func Init() {
 	module = GetConfigString("server.module", true, "")
 	env = GetConfigString("server.env", true, "")
 	keyprefix = fmt.Sprint(project, ":", module, ":")
-	repeat_control = sync.Map{}
 }
 
 func Run() {
@@ -558,17 +555,4 @@ func GetUtcTimeStamp(timestr string) string {
 	t, _ := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
 	r := t.UTC().Format("2006-01-02T15:04:05Z")
 	return r
-}
-
-func GetRepeatControl(key string) bool {
-	_, under_control := repeat_control.Load(key)
-	if under_control {
-		return false
-	}
-	repeat_control.Store(key, 1)
-	return true
-}
-
-func ReleaseRepeatControl(key string) {
-	repeat_control.Delete(key)
 }
