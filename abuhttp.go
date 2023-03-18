@@ -248,6 +248,7 @@ func (this *AbuHttp) OnGetWithAuth(path string, handler AbuHttpHandler, auth str
 		if !this.token.SetNx(lockkey, 1) {
 			return
 		}
+		this.token.Expire(lockkey, 10)
 		defer func() {
 			this.token.Del(lockkey)
 		}()
@@ -386,6 +387,7 @@ func (this *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth st
 		if !this.token.SetNx(lockkey, 1) {
 			return
 		}
+		this.token.Expire(lockkey, 10)
 		defer func() {
 			this.token.Del(lockkey)
 		}()
