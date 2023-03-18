@@ -413,5 +413,21 @@ func (this *GameDesk) RemoveMsgCallback(msgid string) {
 	this.msgcallbacks.Delete(msgid)
 }
 
-func (this *GameDesk) SendMsgToUser(UserId int, msgid string, data interface{}) {}
-func (this *GameDesk) SendMsgToAll(msgid string, data interface{})              {}
+func (this *GameDesk) SendMsgToUser(ChairId int, msgid string, data interface{}) {
+	if ChairId < 0 || ChairId >= len(this.users) {
+		return
+	}
+	user := this.users[ChairId]
+	if user != nil {
+		this.GameSrv.SendMsgToUser(user.BaseData.UserId, msgid, data)
+	}
+}
+
+func (this *GameDesk) SendMsgToAll(msgid string, data interface{}) {
+	for i := 0; i < len(this.users); i++ {
+		user := this.users[i]
+		if user != nil {
+			this.GameSrv.SendMsgToUser(user.BaseData.UserId, msgid, data)
+		}
+	}
+}
