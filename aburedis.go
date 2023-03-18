@@ -129,7 +129,7 @@ type RedisGetExCallback func() (int, interface{})
 func (this *AbuRedis) GetEx(key string, callback RedisGetExCallback) string {
 	redisdata := this.Get(key)
 	if redisdata != nil {
-		return redisdata.(string)
+		return string(redisdata.([]byte))
 	} else {
 		t, data := callback()
 		this.SetEx(key, t, data)
