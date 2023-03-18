@@ -139,6 +139,8 @@ func (this *GameServer) onwsclose(conn int64) {
 		this.conn_user.Delete(conn)
 		this.user_conn.Delete(userdata.(*UserData).BaseData.UserId)
 		ud := userdata.(*UserData)
+		rediskey := fmt.Sprintf("%s:hall:token:%s", this.project, ud.ReconnectToken)
+		this.redis.SetEx(rediskey, 120, H{"GameId": this.gameid, "RoomLevel": this.roomlevel, "ServerId": this.serverid, "UserId": ud.BaseData.UserId})
 		if ud.Desk != nil {
 			ud.Desk.users[ud.BaseData.ChairId] = nil
 			ud.Desk.usercount--
