@@ -201,6 +201,7 @@ func (this *AbuRedis) SetEx(key string, expire int, value interface{}) error {
 	}
 	return nil
 }
+
 func (this *AbuRedis) SetStringEx(key string, expire int, value string) error {
 	conn := this.redispool.Get()
 	defer conn.Close()
@@ -210,6 +211,31 @@ func (this *AbuRedis) SetStringEx(key string, expire int, value string) error {
 		return err
 	}
 	return nil
+}
+
+func (this *AbuRedis) SetNx(key string, value interface{}) bool {
+	conn := this.redispool.Get()
+	defer conn.Close()
+	output, _ := json.Marshal(&value)
+	r, err := conn.Do("setnx", key, output)
+	if err != nil {
+		logs.Error(err.Error())
+		return false
+	}
+	ir := r.(int64)
+	return ir == 1
+}
+
+func (this *AbuRedis) SetNxString(key string, value string) bool {
+	conn := this.redispool.Get()
+	defer conn.Close()
+	r, err := conn.Do("setnx", key, value)
+	if err != nil {
+		logs.Error(err.Error())
+		return false
+	}
+	ir := r.(int64)
+	return ir == 1
 }
 
 func (this *AbuRedis) Del(key string) error {
@@ -457,4 +483,13 @@ func (this *AbuRedis) SRem(key string, vals ...interface{}) []interface{} {
 		return []interface{}{}
 	}
 	return nil
+}
+
+func (this *AbuRedis) GetLock(key string, maxtime int) bool {
+
+	return true
+}
+
+func (this *AbuRedis) ReleaseLock(key string) bool {
+	return true
 }
