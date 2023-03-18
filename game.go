@@ -51,7 +51,7 @@ type IServer interface {
 
 type IGameScene interface {
 	Init(IServer)
-	UserCome(int)
+	UserEnter(int)
 	UserLeave(int)
 	Release()
 }
@@ -382,7 +382,7 @@ func (this *GameServer) make_desk() {
 			this.readyuserhead = this.readyuserhead.Next
 		}
 		this.game_invoke(func() {
-			desk.GameScene.UserCome(desk.users[0].BaseData.ChairId)
+			desk.GameScene.UserEnter(desk.users[0].BaseData.ChairId)
 		})
 	}
 }
