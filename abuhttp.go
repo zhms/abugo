@@ -242,7 +242,7 @@ func (this *AbuHttp) OnGetWithAuth(path string, handler AbuHttpHandler, auth str
 			ctx.RespErr(2, "请在header填写:x-token")
 			return
 		}
-		keystr := fmt.Sprintf("get%v%v%v", gc.Request.URL.Path, tokenstr, strbody)
+		keystr := fmt.Sprintf("get%v%v", gc.Request.URL.Path, tokenstr)
 		reqid := Md5(keystr)
 		lockkey := fmt.Sprint("lock:", reqid)
 		if !this.token.SetNx(lockkey, 1) {
@@ -381,7 +381,7 @@ func (this *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth st
 			ctx.RespErr(3, "未登录或登录已过期")
 			return
 		}
-		keystr := fmt.Sprintf("post%v%v%v", gc.Request.URL.Path, tokenstr, strbody)
+		keystr := fmt.Sprintf("post%v%v", gc.Request.URL.Path, tokenstr)
 		reqid := Md5(keystr)
 		lockkey := fmt.Sprint("lock:", reqid)
 		if !this.token.SetNx(lockkey, 1) {
