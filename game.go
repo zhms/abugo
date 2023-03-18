@@ -47,6 +47,8 @@ type IServer interface {
 	SendMsgToAll(msgid string, data interface{})
 	KickOutUser(UserId int)
 	GetUserData(UserId int) *UserData
+	AddMsgCallback(msgid string, callback GameMsgCallback)
+	RemoveMsgCallback(msgid string)
 }
 
 type IGameScene interface {
@@ -258,7 +260,7 @@ func (this *GameServer) heart_beat() {
 			}
 			return true
 		})
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 1)
 	}
 }
 
