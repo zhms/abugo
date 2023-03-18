@@ -124,6 +124,49 @@ func (this *AbuRedis) Get(key string) interface{} {
 	return ret
 }
 
+type RedisGetExCallback func() (int, interface{})
+
+func (this *AbuRedis) GetEx(key string, callback RedisGetExCallback) string {
+	redisdata := this.Get(key)
+	if redisdata != nil {
+		return redisdata.(string)
+	} else {
+		t, data := callback()
+		this.SetEx(key, t, data)
+		jdata := data.(string)
+		this.SetStringEx(key, t, jdata)
+		return jdata
+	}
+}
+
+func (this *AbuRedis) GetExMap(key string, callback RedisGetExCallback) *map[string]interface{} {
+	redisdata := this.Get(key)
+	if redisdata != nil {
+		jdata := make(map[string]interface{})
+		json.Unmarshal(redisdata.([]byte), &jdata)
+		return &jdata
+	} else {
+		t, data := callback()
+		this.SetEx(key, t, data)
+		jdata := data.(map[string]interface{})
+		return &jdata
+	}
+}
+
+func (this *AbuRedis) GetExArray(key string, callback RedisGetExCallback) *[]interface{} {
+	redisdata := this.Get(key)
+	if redisdata != nil {
+		jdata := []interface{}{}
+		json.Unmarshal(redisdata.([]byte), &jdata)
+		return &jdata
+	} else {
+		t, data := callback()
+		this.SetEx(key, t, data)
+		jdata := data.([]interface{})
+		return &jdata
+	}
+}
+
 func (this *AbuRedis) Set(key string, value interface{}) error {
 	conn := this.redispool.Get()
 	defer conn.Close()

@@ -17,6 +17,8 @@ type GameUserData struct {
 	NickName   string
 	Amount     float64
 	BankAmount float64
+	ChairId    int
+	Ready      bool
 }
 
 type GameInfo struct {
@@ -41,48 +43,59 @@ type UserData struct {
 }
 
 type IServer interface {
-	AddUserComeCallback(callback GameUserComeCallback)
-	AddUserLeaveCallback(callback GameUserLeaveCallback)
-	AddMsgCallback(msgid string, callback GameMsgCallback)
-	RemoveMsgCallback(msgid string)
 	SendMsgToUser(UserId int, msgid string, data interface{})
 	SendMsgToAll(msgid string, data interface{})
 	KickOutUser(UserId int)
-	GetUserData(UserId int)
+	GetUserData(UserId int) *GameUserData
 }
 
 type IGameScene interface {
 	Init(IServer)
+	UserCome(int)
+	UserLeave(int)
 	Release()
 }
 
 type AllocDeskCallback func() IGameScene
 
 type GameDesk struct {
-	Desk IGameScene
+	DeskId       int
+	GameScene    IGameScene
+	GameSrv      *GameServer
+	users        []*UserData
+	usercount    int
+	msgcallbacks sync.Map
+}
+
+type ReadyUser struct {
+	User *UserData
+	Prev *ReadyUser
+	Next *ReadyUser
 }
 
 type GameMsgCallback func(int, *map[string]interface{})
 type GameUserComeCallback func(int)
 type GameUserLeaveCallback func(int)
 type GameServer struct {
-	project           string
-	module            string
-	game_thread       chan GameCallback
-	db                *AbuDb
-	redis             *AbuRedis
-	http              *AbuHttp
-	msgcallbacks      sync.Map
-	usercomecallback  GameUserComeCallback
-	userleavecallback GameUserLeaveCallback
-	user_conn         sync.Map
-	conn_user         sync.Map
-	gameid            int
-	roomlevel         int
-	serverid          int
-	gameinfo          GameInfo
-	alloccallback     AllocDeskCallback
-	gamedesk          []*GameDesk
+	project        string
+	module         string
+	game_thread    chan GameCallback
+	db             *AbuDb
+	redis          *AbuRedis
+	http           *AbuHttp
+	user_conn      sync.Map
+	conn_user      sync.Map
+	gameid         int
+	roomlevel      int
+	serverid       int
+	gameinfo       GameInfo
+	newgamescene   AllocDeskCallback
+	desks          sync.Map
+	deskid         int
+	readyuserhead  *ReadyUser
+	readyusertail  *ReadyUser
+	readyusercount int
+	locker         sync.Mutex
 }
 
 func (this *GameServer) Init(gameinfo GameInfo, callback AllocDeskCallback) {
@@ -90,7 +103,9 @@ func (this *GameServer) Init(gameinfo GameInfo, callback AllocDeskCallback) {
 	this.project = Project()
 	this.module = Module()
 	this.gameinfo = gameinfo
-	this.alloccallback = callback
+	this.newgamescene = callback
+	this.deskid = 1
+	this.readyusercount = 0
 
 	this.db = new(AbuDb)
 	this.db.Init("server.db")
@@ -108,6 +123,10 @@ func (this *GameServer) Init(gameinfo GameInfo, callback AllocDeskCallback) {
 	this.http.WsAddCloseCallback(this.onwsclose)
 	go this.game_runner()
 	//go this.heart_beat()
+	go func() {
+		this.make_desk()
+		time.Sleep(time.Second * 2)
+	}()
 }
 
 func (this *GameServer) game_invoke(callback GameCallback) {
@@ -119,11 +138,20 @@ func (this *GameServer) onwsclose(conn int64) {
 	if ok {
 		this.conn_user.Delete(conn)
 		this.user_conn.Delete(userdata.(*UserData).BaseData.UserId)
-		this.game_invoke(func() {
-			if this.userleavecallback != nil {
-				this.userleavecallback(userdata.(*UserData).BaseData.UserId)
-			}
-		})
+		ud := userdata.(*UserData)
+		if ud.Desk != nil {
+			ud.Desk.users[ud.BaseData.ChairId] = nil
+			ud.Desk.usercount--
+			this.game_invoke(func() {
+				ud.Desk.GameScene.UserLeave(ud.BaseData.ChairId)
+				if this.gameinfo.MakeType == 1 {
+					if ud.Desk.usercount == 0 {
+						this.desks.Delete(ud.Desk.DeskId)
+						ud.Desk.GameScene.Release()
+					}
+				}
+			})
+		}
 	}
 }
 
@@ -172,11 +200,13 @@ func (this *GameServer) default_msg_callback(conn int64, msgid string, data inte
 	} else if msgid == "ready" {
 		userdata, ok := this.conn_user.Load(conn)
 		if ok {
-			this.game_invoke(func() {
-				if this.usercomecallback != nil {
-					this.usercomecallback(userdata.(*UserData).BaseData.UserId)
-				}
-			})
+			this.user_ready(userdata.(*UserData))
+		}
+
+	} else if msgid == "unready" {
+		userdata, ok := this.conn_user.Load(conn)
+		if ok {
+			this.user_unready(userdata.(*UserData))
 		}
 
 	} else if msgid == "heartbeat" {
@@ -184,6 +214,20 @@ func (this *GameServer) default_msg_callback(conn int64, msgid string, data inte
 		if ok {
 			v := value.(*UserData)
 			v.HeartBeatCount = 0
+		}
+	} else {
+		userdata, ok := this.conn_user.Load(conn)
+		if ok {
+			ud := userdata.(*UserData)
+			if ud.Desk != nil {
+				cb, ok := ud.Desk.msgcallbacks.Load(msgid)
+				if ok {
+					callback := cb.(GameMsgCallback)
+					this.game_invoke(func() {
+						callback(ud.BaseData.ChairId, &mdata)
+					})
+				}
+			}
 		}
 	}
 }
@@ -212,22 +256,6 @@ func (this *GameServer) heart_beat() {
 		})
 		time.Sleep(time.Second * 2)
 	}
-}
-
-func (this *GameServer) AddUserComeCallback(callback GameUserComeCallback) {
-	this.usercomecallback = callback
-}
-
-func (this *GameServer) AddUserLeaveCallback(callback GameUserLeaveCallback) {
-	this.userleavecallback = callback
-}
-
-func (this *GameServer) AddMsgCallback(msgid string, callback GameMsgCallback) {
-	this.msgcallbacks.Store(msgid, callback)
-}
-
-func (this *GameServer) RemoveMsgCallback(msgid string) {
-	this.msgcallbacks.Delete(msgid)
 }
 
 func (this *GameServer) SendMsgToUser(UserId int, msgid string, data interface{}) {
@@ -262,3 +290,124 @@ func (this *GameServer) GetUserData(UserId int) *GameUserData {
 		return nil
 	}
 }
+
+func (this *GameServer) user_ready(userdata *UserData) {
+	this.locker.Lock()
+	defer func() {
+		this.locker.Unlock()
+	}()
+	if userdata.BaseData.Ready {
+		return
+	}
+	user := ReadyUser{}
+	user.User = userdata
+	user.User.BaseData.Ready = true
+	if this.readyuserhead == nil {
+		this.readyuserhead = &user
+		this.readyusertail = this.readyuserhead
+		this.readyusercount++
+	} else {
+		user.Prev = this.readyusertail
+		this.readyusertail.Next = &user
+		this.readyusercount++
+	}
+}
+
+func (this *GameServer) user_unready(userdata *UserData) {
+	this.locker.Lock()
+	defer func() {
+		this.locker.Unlock()
+	}()
+	if this.readyuserhead.User == userdata {
+		if this.readyusercount == 1 {
+			this.readyusercount = 0
+			this.readyuserhead = nil
+			this.readyusertail = nil
+		} else {
+			this.readyuserhead = this.readyuserhead.Next
+		}
+		this.readyusercount--
+	} else if this.readyusertail.User == userdata {
+		if this.readyusercount == 1 {
+			this.readyusercount = 0
+			this.readyuserhead = nil
+			this.readyusertail = nil
+		} else {
+			this.readyusertail.Prev.Next = nil
+		}
+		this.readyusercount--
+	} else {
+		node := this.readyuserhead
+		for {
+			if node == nil {
+				break
+			}
+			if node.User != userdata {
+				node = node.Next
+			} else {
+				node.Next.Prev = node.Prev
+				node.Prev.Next = node.Next
+				this.readyusercount--
+			}
+		}
+	}
+}
+
+func (this *GameServer) make_desk() {
+	this.locker.Lock()
+	defer func() {
+		this.locker.Unlock()
+	}()
+	if this.readyusercount == 0 {
+		return
+	}
+	if this.gameinfo.MakeType == 1 {
+		deskid := this.deskid
+		this.deskid++
+		desk := GameDesk{}
+		desk.GameScene = this.newgamescene()
+		desk.GameSrv = this
+		desk.users = make([]*UserData, this.gameinfo.ChairCount)
+		desk.DeskId = deskid
+		desk.GameScene.Init(&desk)
+		this.desks.Store(desk.DeskId, &desk)
+		desk.users[0] = this.readyuserhead.User
+		desk.users[0].BaseData.ChairId = 0
+		desk.users[0].Desk = &desk
+		this.readyusercount--
+		if this.readyusercount == 0 {
+			this.readyuserhead = nil
+			this.readyusertail = nil
+		} else {
+			this.readyuserhead = this.readyuserhead.Next
+		}
+		this.game_invoke(func() {
+			desk.GameScene.UserCome(desk.users[0].BaseData.ChairId)
+		})
+	}
+}
+
+func (this *GameDesk) GetUserData(ChairId int) *GameUserData {
+	if this.users[ChairId] == nil {
+		return nil
+	}
+	return &this.users[ChairId].BaseData
+}
+
+func (this *GameDesk) KickOutUser(ChairId int) {
+	if this.users[ChairId] == nil {
+		return
+	}
+	this.GameSrv.KickOutUser(this.users[ChairId].BaseData.UserId)
+}
+
+func (this *GameDesk) AddMsgCallback(msgid string, callback GameMsgCallback) {
+	this.msgcallbacks.Store(msgid, callback)
+}
+
+func (this *GameDesk) RemoveMsgCallback(msgid string) {
+	this.msgcallbacks.Delete(msgid)
+}
+
+func (this *GameDesk) SendMsgToUser(UserId int, msgid string, data interface{}) {}
+func (this *GameDesk) SendMsgToAll(msgid string, data interface{})              {}
