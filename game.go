@@ -124,8 +124,10 @@ func (this *GameServer) Init(gameinfo GameInfo, callback AllocDeskCallback) {
 	go this.game_runner()
 	//go this.heart_beat()
 	go func() {
-		this.make_desk()
-		time.Sleep(time.Second * 2)
+		for {
+			this.make_desk()
+			time.Sleep(time.Second * 2)
+		}
 	}()
 }
 
