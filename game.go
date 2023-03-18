@@ -10,7 +10,7 @@ import (
 )
 
 type GameCallback func()
-type GameUserData struct {
+type UserData struct {
 	SellerId   int
 	ChannelId  int
 	UserId     int
@@ -34,8 +34,8 @@ type GameInfo struct {
 	MakeType int
 }
 
-type UserData struct {
-	BaseData       GameUserData
+type ServerUserData struct {
+	BaseData       UserData
 	Connection     int64
 	ReconnectToken string
 	HeartBeatCount int
@@ -46,7 +46,7 @@ type IServer interface {
 	SendMsgToUser(UserId int, msgid string, data interface{})
 	SendMsgToAll(msgid string, data interface{})
 	KickOutUser(UserId int)
-	GetUserData(UserId int) *GameUserData
+	GetUserData(UserId int) *UserData
 }
 
 type IGameScene interface {
@@ -62,13 +62,13 @@ type GameDesk struct {
 	DeskId       int
 	GameScene    IGameScene
 	GameSrv      *GameServer
-	users        []*UserData
+	users        []*ServerUserData
 	usercount    int
 	msgcallbacks sync.Map
 }
 
 type ReadyUser struct {
-	User *UserData
+	User *ServerUserData
 	Prev *ReadyUser
 	Next *ReadyUser
 }
@@ -139,8 +139,8 @@ func (this *GameServer) onwsclose(conn int64) {
 	userdata, ok := this.conn_user.Load(conn)
 	if ok {
 		this.conn_user.Delete(conn)
-		this.user_conn.Delete(userdata.(*UserData).BaseData.UserId)
-		ud := userdata.(*UserData)
+		this.user_conn.Delete(userdata.(*ServerUserData).BaseData.UserId)
+		ud := userdata.(*ServerUserData)
 		rediskey := fmt.Sprintf("%s:hall:token:%s", this.project, ud.ReconnectToken)
 		this.redis.SetEx(rediskey, 120, H{"GameId": this.gameid, "RoomLevel": this.roomlevel, "ServerId": this.serverid, "UserId": ud.BaseData.UserId})
 		if ud.Desk != nil {
@@ -180,7 +180,7 @@ func (this *GameServer) default_msg_callback(conn int64, msgid string, data inte
 				UserId := GetMapInt(&jdata, "UserId")
 				useridrediskey := fmt.Sprintf("%s:hall:user:data:%d", this.project, UserId)
 				redisuserdata := this.redis.HGetAll(useridrediskey)
-				userdata := UserData{}
+				userdata := ServerUserData{}
 				userdata.Connection = conn
 				userdata.BaseData.SellerId = int(GetMapInt(redisuserdata, "SellerId"))
 				userdata.BaseData.ChannelId = int(GetMapInt(redisuserdata, "ChannelId"))
@@ -204,25 +204,25 @@ func (this *GameServer) default_msg_callback(conn int64, msgid string, data inte
 	} else if msgid == "ready" {
 		userdata, ok := this.conn_user.Load(conn)
 		if ok {
-			this.user_ready(userdata.(*UserData))
+			this.user_ready(userdata.(*ServerUserData))
 		}
 
 	} else if msgid == "unready" {
 		userdata, ok := this.conn_user.Load(conn)
 		if ok {
-			this.user_unready(userdata.(*UserData))
+			this.user_unready(userdata.(*ServerUserData))
 		}
 
 	} else if msgid == "heartbeat" {
 		value, ok := this.conn_user.Load(conn)
 		if ok {
-			v := value.(*UserData)
+			v := value.(*ServerUserData)
 			v.HeartBeatCount = 0
 		}
 	} else {
 		userdata, ok := this.conn_user.Load(conn)
 		if ok {
-			ud := userdata.(*UserData)
+			ud := userdata.(*ServerUserData)
 			if ud.Desk != nil {
 				cb, ok := ud.Desk.msgcallbacks.Load(msgid)
 				if ok {
@@ -248,7 +248,7 @@ func (this *GameServer) game_runner() {
 func (this *GameServer) heart_beat() {
 	for {
 		this.conn_user.Range(func(key, value any) bool {
-			v := value.(*UserData)
+			v := value.(*ServerUserData)
 			if v.HeartBeatCount >= 5 {
 				this.http.WsClose(key.(int64))
 				this.onwsclose(key.(int64))
@@ -265,13 +265,13 @@ func (this *GameServer) heart_beat() {
 func (this *GameServer) SendMsgToUser(UserId int, msgid string, data interface{}) {
 	userdata, ok := this.user_conn.Load(UserId)
 	if ok {
-		this.http.WsSendMsg(userdata.(*UserData).Connection, msgid, data)
+		this.http.WsSendMsg(userdata.(*ServerUserData).Connection, msgid, data)
 	}
 }
 
 func (this *GameServer) SendMsgToAll(msgid string, data interface{}) {
 	this.conn_user.Range(func(key, value any) bool {
-		v := value.(*UserData)
+		v := value.(*ServerUserData)
 		this.http.WsSendMsg(v.Connection, msgid, data)
 		return true
 	})
@@ -280,22 +280,22 @@ func (this *GameServer) SendMsgToAll(msgid string, data interface{}) {
 func (this *GameServer) KickOutUser(UserId int) {
 	value, ok := this.user_conn.Load(UserId)
 	if ok {
-		conn := value.(*UserData).Connection
+		conn := value.(*ServerUserData).Connection
 		this.http.WsClose(conn)
 		this.onwsclose(conn)
 	}
 }
 
-func (this *GameServer) GetUserData(UserId int) *GameUserData {
+func (this *GameServer) GetUserData(UserId int) *UserData {
 	value, ok := this.user_conn.Load(UserId)
 	if ok {
-		return &value.(*UserData).BaseData
+		return &value.(*ServerUserData).BaseData
 	} else {
 		return nil
 	}
 }
 
-func (this *GameServer) user_ready(userdata *UserData) {
+func (this *GameServer) user_ready(userdata *ServerUserData) {
 	this.locker.Lock()
 	defer func() {
 		this.locker.Unlock()
@@ -317,7 +317,7 @@ func (this *GameServer) user_ready(userdata *UserData) {
 	}
 }
 
-func (this *GameServer) user_unready(userdata *UserData) {
+func (this *GameServer) user_unready(userdata *ServerUserData) {
 	this.locker.Lock()
 	defer func() {
 		this.locker.Unlock()
@@ -371,7 +371,7 @@ func (this *GameServer) make_desk() {
 		desk := GameDesk{}
 		desk.GameScene = this.newgamescene()
 		desk.GameSrv = this
-		desk.users = make([]*UserData, this.gameinfo.ChairCount)
+		desk.users = make([]*ServerUserData, this.gameinfo.ChairCount)
 		desk.DeskId = deskid
 		desk.GameScene.Init(&desk)
 		this.desks.Store(desk.DeskId, &desk)
@@ -391,7 +391,7 @@ func (this *GameServer) make_desk() {
 	}
 }
 
-func (this *GameDesk) GetUserData(ChairId int) *GameUserData {
+func (this *GameDesk) GetUserData(ChairId int) *UserData {
 	if this.users[ChairId] == nil {
 		return nil
 	}
