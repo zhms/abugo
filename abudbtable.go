@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/beego/beego/logs"
 	_ "github.com/go-sql-driver/mysql"
@@ -480,6 +481,17 @@ func (this *AbuDbTable) getone(rows *sql.Rows) *map[string]interface{} {
 				} else {
 					data[fields[i]] = scans[i]
 				}
+			} else if typename == "DATETIME" {
+				timestr := string(scans[i].([]uint8))
+				t, _ := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
+				r := t.UTC().Format("2006-01-02T15:04:05Z")
+				data[fields[i]] = r
+			} else if typename == "DATE" {
+				timestr := string(scans[i].([]uint8))
+				timestr += " 00:00:00"
+				t, _ := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
+				r := t.UTC().Format("2006-01-02T15:04:05Z")
+				data[fields[i]] = r
 			} else {
 				data[fields[i]] = string(scans[i].([]uint8))
 			}
