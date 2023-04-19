@@ -61,7 +61,7 @@ func (this *AbuDb) conn() *sql.DB {
 func (this *AbuDb) Query(query string, args ...any) (*[]map[string]interface{}, error) {
 	data, err := this.db.DB().Query(query, args...)
 	if err != nil {
-		logs.Error(err)
+		logs.Error(query, args, err)
 		return nil, err
 	}
 	return this.GetResult(data), nil
@@ -70,7 +70,7 @@ func (this *AbuDb) Query(query string, args ...any) (*[]map[string]interface{}, 
 func (this *AbuDb) Exec(query string, args ...any) (*sql.Result, error) {
 	data, err := this.db.DB().Exec(query, args...)
 	if err != nil {
-		logs.Error(err)
+		logs.Error(query, args, err)
 		return nil, err
 	}
 	return &data, nil
@@ -93,7 +93,7 @@ func (this *AbuDb) CallProcedure(procname string, args ...interface{}) (*map[str
 
 	dbresult, err := this.db.DB().Query(sql, args...)
 	if err != nil {
-		logs.Error(err)
+		logs.Error(sql, args, err)
 		return nil, err
 	}
 	if dbresult.Next() {

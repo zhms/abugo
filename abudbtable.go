@@ -287,7 +287,7 @@ func (this *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, or
 	}
 	dbresult, err := this.db.conn().Query(sql, wv...)
 	if err != nil {
-		logs.Error(err)
+		logs.Error(sql, wv, err)
 		return &[]map[string]interface{}{}, 0
 	}
 	dbresult.Next()
@@ -313,7 +313,7 @@ func (this *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, or
 	}
 	dbresult, err = this.db.conn().Query(sql, wv...)
 	if err != nil {
-		logs.Error(err)
+		logs.Error(sql, wv, err)
 		return &[]map[string]interface{}{}, 0
 	}
 	datas := []map[string]interface{}{}
@@ -380,7 +380,7 @@ func (this *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, 
 	}
 	dbresult, err := this.db.conn().Query(sql, wv...)
 	if err != nil {
-		logs.Error(err)
+		logs.Error(sql, wv, err)
 		return &[]map[string]interface{}{}, 0
 	}
 	dbresult.Next()
@@ -402,7 +402,7 @@ func (this *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, 
 	}
 	dbresult, err = this.db.conn().Query(sql, wv...)
 	if err != nil {
-		logs.Error(err)
+		logs.Error(sql, wv, err)
 		return &[]map[string]interface{}{}, 0
 	}
 	if !dbresult.Next() {
@@ -440,7 +440,7 @@ func (this *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, 
 	}
 	dbresult, err = this.db.conn().Query(sql, wv...)
 	if err != nil {
-		logs.Error(err)
+		logs.Error(sql, wv, err)
 		return &[]map[string]interface{}{}, 0
 	}
 	datas := []map[string]interface{}{}
