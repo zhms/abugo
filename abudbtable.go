@@ -299,6 +299,9 @@ func (this *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, or
 		Value interface{}
 		Opt   string
 	}
+	if this.where == nil {
+		this.where = &map[string]interface{}{}
+	}
 	order := []FieldValue{}
 	for k, v := range *this.where {
 		ks := strings.Split(k, "@")
@@ -390,6 +393,9 @@ func (this *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, 
 		Field string
 		Value interface{}
 		Opt   string
+	}
+	if this.where == nil {
+		this.where = &map[string]interface{}{}
 	}
 	order := []FieldValue{}
 	for k, v := range *this.where {
@@ -563,6 +569,9 @@ func (this *AbuDbTable) get_select_sql() (string, []interface{}) {
 		Value interface{}
 		Opt   string
 	}
+	if this.where == nil {
+		this.where = &map[string]interface{}{}
+	}
 	order := []FieldValue{}
 	for k, v := range *this.where {
 		ks := strings.Split(k, "@")
@@ -618,6 +627,9 @@ func (this *AbuDbTable) get_delete_sql() (string, []interface{}) {
 		Value interface{}
 		Opt   string
 	}
+	if this.where == nil {
+		this.where = &map[string]interface{}{}
+	}
 	order := []FieldValue{}
 	for k, v := range *this.where {
 		ks := strings.Split(k, "@")
@@ -672,6 +684,9 @@ func (this *AbuDbTable) get_update_sql() (string, *[]interface{}) {
 		Field string
 		Value interface{}
 		Opt   string
+	}
+	if this.where == nil {
+		this.where = &map[string]interface{}{}
 	}
 	order := []FieldValue{}
 	for k, v := range *this.where {
