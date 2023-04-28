@@ -112,8 +112,8 @@ func (this *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 	return this
 }
 
-func (this *AbuDbTable) SetFields(fields map[string]int) *AbuDbTable {
-	this.fields = &fields
+func (this *AbuDbTable) SetFields(fields *map[string]int) *AbuDbTable {
+	this.fields = fields
 	return this
 }
 
