@@ -18,18 +18,18 @@ type AbuDbTable struct {
 	dbconn    *sql.DB
 	opttype   int
 	tablename string
-	where     map[string]interface{}
+	where     *map[string]interface{}
 	selectstr string
 	orderby   string
 	limit     int
 	join      string
-	update    map[string]interface{}
-	insert    map[string]interface{}
-	delete    map[string]interface{}
+	update    *map[string]interface{}
+	insert    *map[string]interface{}
+	delete    *map[string]interface{}
 	pagekey   string
 	pageorder string
 	dicsql    string
-	dicwv     []interface{}
+	dicwv     *[]interface{}
 	fields    *map[string]int
 }
 
@@ -51,11 +51,12 @@ func (this *AbuDbTable) Select(SelectStr string) *AbuDbTable {
 func (this *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 	wheretype := reflect.TypeOf(where[0])
 	if strings.Index(wheretype.Name(), "AbuDbWhere") >= 0 {
-		this.where = where[0].(AbuDbWhere).Data
+		t := where[0].(AbuDbWhere)
+		this.where = &t.Data
 	} else if wheretype.Name() == "string" {
 		this.dicsql = where[0].(string)
 		for i := 1; i < len(where); i++ {
-			this.dicwv = append(this.dicwv, where[i])
+			*this.dicwv = append(*this.dicwv, where[i])
 		}
 	} else {
 		w := AbuDbWhere{}
@@ -107,7 +108,7 @@ func (this *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 				}
 			}
 		}
-		this.where = w.Data
+		this.where = &w.Data
 	}
 	return this
 }
@@ -178,7 +179,20 @@ func (this *AbuDbTable) GetList() (*[]map[string]interface{}, error) {
 	return &data, nil
 }
 
-func (this *AbuDbTable) Update(update map[string]interface{}) (int64, error) {
+func (this *AbuDbTable) Update(update *map[string]interface{}) (int64, error) {
+	if this.fields != nil {
+		nofields := []string{}
+		for k := range *update {
+			lk := strings.ToLower(k)
+			_, ok := (*this.fields)[lk]
+			if !ok {
+				nofields = append(nofields, k)
+			}
+		}
+		for i := 0; i < len(nofields); i++ {
+			delete(*update, nofields[i])
+		}
+	}
 	this.update = update
 	sql, wv := this.get_update_sql()
 	conn := this.dbconn
@@ -196,7 +210,20 @@ func (this *AbuDbTable) Update(update map[string]interface{}) (int64, error) {
 	return dbresult.RowsAffected()
 }
 
-func (this *AbuDbTable) Insert(insert map[string]interface{}) (int64, error) {
+func (this *AbuDbTable) Insert(insert *map[string]interface{}) (int64, error) {
+	if this.fields != nil {
+		nofields := []string{}
+		for k := range *insert {
+			lk := strings.ToLower(k)
+			_, ok := (*this.fields)[lk]
+			if !ok {
+				nofields = append(nofields, k)
+			}
+		}
+		for i := 0; i < len(nofields); i++ {
+			delete(*insert, nofields[i])
+		}
+	}
 	this.insert = insert
 	sql, wv := this.get_insert_sql()
 	conn := this.dbconn
@@ -204,9 +231,9 @@ func (this *AbuDbTable) Insert(insert map[string]interface{}) (int64, error) {
 		conn = this.db.conn()
 	}
 	if this.db.logmode {
-		logs.Debug(sql, wv...)
+		logs.Debug(sql, (*wv)...)
 	}
-	dbresult, err := conn.Exec(sql, wv...)
+	dbresult, err := conn.Exec(sql, (*wv)...)
 	if err != nil {
 		logs.Error(sql, wv, err)
 		return 0, err
@@ -231,7 +258,20 @@ func (this *AbuDbTable) Delete() (int64, error) {
 	return dbresult.RowsAffected()
 }
 
-func (this *AbuDbTable) Replace(insert map[string]interface{}) (int64, error) {
+func (this *AbuDbTable) Replace(insert *map[string]interface{}) (int64, error) {
+	if this.fields != nil {
+		nofields := []string{}
+		for k := range *insert {
+			lk := strings.ToLower(k)
+			_, ok := (*this.fields)[lk]
+			if !ok {
+				nofields = append(nofields, k)
+			}
+		}
+		for i := 0; i < len(nofields); i++ {
+			delete(*insert, nofields[i])
+		}
+	}
 	this.insert = insert
 	sql, wv := this.get_replace_sql()
 	conn := this.dbconn
@@ -260,7 +300,7 @@ func (this *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, or
 		Opt   string
 	}
 	order := []FieldValue{}
-	for k, v := range this.where {
+	for k, v := range *this.where {
 		ks := strings.Split(k, "@")
 		opt := "="
 		if len(ks) == 3 {
@@ -286,7 +326,7 @@ func (this *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, or
 	}
 	if len(this.dicsql) > 0 {
 		wstr = this.dicsql
-		wv = this.dicwv
+		wv = *this.dicwv
 	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT COUNT(*) AS Total FROM %s where %s", this.tablename, wstr)
@@ -352,7 +392,7 @@ func (this *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, 
 		Opt   string
 	}
 	order := []FieldValue{}
-	for k, v := range this.where {
+	for k, v := range *this.where {
 		ks := strings.Split(k, "@")
 		opt := "="
 		if len(ks) == 3 {
@@ -379,7 +419,7 @@ func (this *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, 
 	orderby = strings.ToLower(orderby)
 	if len(this.dicsql) > 0 {
 		wstr = this.dicsql
-		wv = this.dicwv
+		wv = *this.dicwv
 	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT COUNT(%s) AS Total FROM %s where %s", orderbyfield, this.tablename, wstr)
@@ -524,7 +564,7 @@ func (this *AbuDbTable) get_select_sql() (string, []interface{}) {
 		Opt   string
 	}
 	order := []FieldValue{}
-	for k, v := range this.where {
+	for k, v := range *this.where {
 		ks := strings.Split(k, "@")
 		opt := "="
 		if len(ks) == 3 {
@@ -550,7 +590,7 @@ func (this *AbuDbTable) get_select_sql() (string, []interface{}) {
 	}
 	if len(this.dicsql) > 0 {
 		wstr = this.dicsql
-		wv = this.dicwv
+		wv = *this.dicwv
 	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s ", this.selectstr, this.tablename, this.join, wstr)
@@ -579,7 +619,7 @@ func (this *AbuDbTable) get_delete_sql() (string, []interface{}) {
 		Opt   string
 	}
 	order := []FieldValue{}
-	for k, v := range this.where {
+	for k, v := range *this.where {
 		ks := strings.Split(k, "@")
 		opt := "="
 		if len(ks) == 3 {
@@ -605,7 +645,7 @@ func (this *AbuDbTable) get_delete_sql() (string, []interface{}) {
 	}
 	if len(this.dicsql) > 0 {
 		wstr = this.dicsql
-		wv = this.dicwv
+		wv = *this.dicwv
 	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("DELETE FROM %s  WHERE %s ", this.tablename, wstr)
@@ -618,7 +658,7 @@ func (this *AbuDbTable) get_update_sql() (string, []interface{}) {
 	sql := ""
 	ustr := ""
 	uv := []interface{}{}
-	for k, v := range this.update {
+	for k, v := range *this.update {
 		ustr += fmt.Sprintf(" %s = ?,", k)
 		uv = append(uv, v)
 	}
@@ -634,7 +674,7 @@ func (this *AbuDbTable) get_update_sql() (string, []interface{}) {
 		Opt   string
 	}
 	order := []FieldValue{}
-	for k, v := range this.where {
+	for k, v := range *this.where {
 		ks := strings.Split(k, "@")
 		opt := "="
 		if len(ks) == 3 {
@@ -660,8 +700,8 @@ func (this *AbuDbTable) get_update_sql() (string, []interface{}) {
 	}
 	if len(this.dicsql) > 0 {
 		wstr = this.dicsql
-		for i := 0; i < len(this.dicwv); i++ {
-			uv = append(uv, this.dicwv[i])
+		for i := 0; i < len(*this.dicwv); i++ {
+			uv = append(uv, (*this.dicwv)[i])
 		}
 	}
 	if len(wstr) > 0 {
@@ -672,26 +712,26 @@ func (this *AbuDbTable) get_update_sql() (string, []interface{}) {
 	return sql, uv
 }
 
-func (this *AbuDbTable) get_insert_sql() (string, []interface{}) {
+func (this *AbuDbTable) get_insert_sql() (string, *[]interface{}) {
 	sql := ""
 	istr := ""
 	ivstr := ""
 	iv := []interface{}{}
-	for k, v := range this.insert {
+	for k, v := range *this.insert {
 		istr += fmt.Sprintf("%s,", k)
 		ivstr += "?,"
 		iv = append(iv, v)
 	}
 	if len(this.dicsql) > 0 {
 		istr = this.dicsql
-		iv = this.dicwv
+		iv = *this.dicwv
 	}
 	if len(istr) > 0 {
 		istr = strings.TrimRight(istr, ",")
 		ivstr = strings.TrimRight(ivstr, ",")
 	}
 	sql = fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s)", this.tablename, istr, ivstr)
-	return sql, iv
+	return sql, &iv
 }
 
 func (this *AbuDbTable) get_replace_sql() (string, []interface{}) {
@@ -699,14 +739,14 @@ func (this *AbuDbTable) get_replace_sql() (string, []interface{}) {
 	istr := ""
 	ivstr := ""
 	iv := []interface{}{}
-	for k, v := range this.insert {
+	for k, v := range *this.insert {
 		istr += fmt.Sprintf("%s,", k)
 		ivstr += "?,"
 		iv = append(iv, v)
 	}
 	if len(this.dicsql) > 0 {
 		istr = this.dicsql
-		iv = this.dicwv
+		iv = *this.dicwv
 	}
 	if len(istr) > 0 {
 		istr = strings.TrimRight(istr, ",")

@@ -30,6 +30,7 @@ import (
 	"encoding/base32"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -577,4 +578,15 @@ func GetLocalTime() string {
 func GetLocalDate() string {
 	tm := time.Now()
 	return tm.In(time.Local).Format("2006-01-02")
+}
+
+func ObjectToMap(obj any) *map[string]interface{} {
+	bytes, err := json.Marshal(obj)
+	if err != nil {
+		logs.Error("ObjectToMap:", err)
+		return nil
+	}
+	data := map[string]interface{}{}
+	json.Unmarshal(bytes, &data)
+	return &data
 }
