@@ -590,3 +590,22 @@ func ObjectToMap(obj any) *map[string]interface{} {
 	json.Unmarshal(bytes, &data)
 	return &data
 }
+
+type DBError struct {
+	ErrCode int
+	ErrMsg  string
+}
+
+func GetDbError(data *map[string]interface{}) *DBError {
+	code, codeok := (*data)["errcode"]
+	if !codeok {
+		return nil
+	}
+	err := DBError{}
+	err.ErrCode = int(InterfaceToInt(code))
+	msg, msgok := (*data)["errmsg"]
+	if msgok {
+		err.ErrMsg = InterfaceToString(msg)
+	}
+	return &err
+}
