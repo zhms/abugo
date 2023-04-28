@@ -350,10 +350,10 @@ func (this *AbuHttp) OnGetNoAuth(path string, handler AbuHttpHandler) {
 }
 
 func (this *AbuHttp) OnPost(path string, handler AbuHttpHandler) {
-	this.OnPostWithAuth(path, handler, "")
+	this.OnPostWithAuth(path, handler, "", false)
 }
 
-func (this *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth string) {
+func (this *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth string, googleverify bool) {
 	this.gin.POST(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
@@ -409,6 +409,25 @@ func (this *AbuHttp) OnPostWithAuth(path string, handler AbuHttpHandler, auth st
 			jtoken := map[string]interface{}{}
 			json.Unmarshal([]byte(ctx.TokenData), &jtoken)
 			iauthdata = jtoken["AuthData"]
+			if googleverify {
+				gc, ok := jbody["GoogleCode"]
+				if !ok {
+					ctx.RespErr(8, "请填写谷歌验证码")
+					return
+				}
+				gcstr := InterfaceToString(gc)
+				if len(gcstr) == 0 {
+					ctx.RespErr(8, "请填写谷歌验证码")
+					return
+				}
+				if strings.Index(Env(), "prd") > 0 {
+					gsstr := GetMapString(&jtoken, "GoogleSecret")
+					if !VerifyGoogleCode(gsstr, gcstr) {
+						ctx.RespErr(9, "谷歌验证码不正确")
+						return
+					}
+				}
+			}
 			jlog := gin.H{"ReqPath": gc.Request.URL.Path,
 				"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
 				"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp(), "Token": tokenstr}
