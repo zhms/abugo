@@ -545,18 +545,6 @@ func LocalTimeToTimeStamp(timestr string) int64 {
 	return t.Local().Unix()
 }
 
-func GetUtcTimeStamp(timestr string) string {
-	if len(timestr) == 0 {
-		return timestr
-	}
-	if len(timestr) == 10 {
-		timestr = timestr + " 00:00:00"
-	}
-	t, _ := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
-	r := t.UTC().Format("2006-01-02T15:04:05Z")
-	return r
-}
-
 func LocalTimeToUtc(timestr string) string {
 	if len(timestr) == 0 {
 		return timestr
@@ -569,6 +557,17 @@ func LocalTimeToUtc(timestr string) string {
 	return r
 }
 
+func UtcToLocalTime(timestr string) string {
+	if len(timestr) == 0 {
+		return ""
+	}
+	t, err := time.Parse(time.RFC3339, timestr)
+	if err != nil {
+		return ""
+	}
+	localTime := t.Local()
+	return localTime.In(time.Local).Format("2006-01-02 15:04:05")
+}
 
 func GetLocalTime() string {
 	tm := time.Now()
