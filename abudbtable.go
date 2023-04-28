@@ -30,6 +30,7 @@ type AbuDbTable struct {
 	pageorder string
 	dicsql    string
 	dicwv     []interface{}
+	fields    *map[string]int
 }
 
 func (this *AbuDbTable) Conn(db *sql.DB) *AbuDbTable {
@@ -108,6 +109,11 @@ func (this *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 		}
 		this.where = w.Data
 	}
+	return this
+}
+
+func (this *AbuDbTable) SetField(fields *map[string]int) *AbuDbTable {
+	this.fields = fields
 	return this
 }
 
