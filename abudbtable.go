@@ -179,10 +179,10 @@ func (this *AbuDbTable) GetList() (*[]map[string]interface{}, error) {
 	return &data, nil
 }
 
-func (this *AbuDbTable) Update(update *map[string]interface{}) (int64, error) {
+func (this *AbuDbTable) Update(update map[string]interface{}) (int64, error) {
 	if this.fields != nil {
 		nofields := []string{}
-		for k := range *update {
+		for k := range update {
 			lk := strings.ToLower(k)
 			_, ok := (*this.fields)[lk]
 			if !ok {
@@ -190,19 +190,19 @@ func (this *AbuDbTable) Update(update *map[string]interface{}) (int64, error) {
 			}
 		}
 		for i := 0; i < len(nofields); i++ {
-			delete(*update, nofields[i])
+			delete(update, nofields[i])
 		}
 	}
-	this.update = update
+	this.update = &update
 	sql, wv := this.get_update_sql()
 	conn := this.dbconn
 	if conn == nil {
 		conn = this.db.conn()
 	}
 	if this.db.logmode {
-		logs.Debug(sql, wv...)
+		logs.Debug(sql, (*wv)...)
 	}
-	dbresult, err := conn.Exec(sql, wv...)
+	dbresult, err := conn.Exec(sql, (*wv)...)
 	if err != nil {
 		logs.Error(sql, wv, err)
 		return 0, err
@@ -210,10 +210,10 @@ func (this *AbuDbTable) Update(update *map[string]interface{}) (int64, error) {
 	return dbresult.RowsAffected()
 }
 
-func (this *AbuDbTable) Insert(insert *map[string]interface{}) (int64, error) {
+func (this *AbuDbTable) Insert(insert map[string]interface{}) (int64, error) {
 	if this.fields != nil {
 		nofields := []string{}
-		for k := range *insert {
+		for k := range insert {
 			lk := strings.ToLower(k)
 			_, ok := (*this.fields)[lk]
 			if !ok {
@@ -221,10 +221,10 @@ func (this *AbuDbTable) Insert(insert *map[string]interface{}) (int64, error) {
 			}
 		}
 		for i := 0; i < len(nofields); i++ {
-			delete(*insert, nofields[i])
+			delete(insert, nofields[i])
 		}
 	}
-	this.insert = insert
+	this.insert = &insert
 	sql, wv := this.get_insert_sql()
 	conn := this.dbconn
 	if conn == nil {
@@ -258,10 +258,10 @@ func (this *AbuDbTable) Delete() (int64, error) {
 	return dbresult.RowsAffected()
 }
 
-func (this *AbuDbTable) Replace(insert *map[string]interface{}) (int64, error) {
+func (this *AbuDbTable) Replace(insert map[string]interface{}) (int64, error) {
 	if this.fields != nil {
 		nofields := []string{}
-		for k := range *insert {
+		for k := range insert {
 			lk := strings.ToLower(k)
 			_, ok := (*this.fields)[lk]
 			if !ok {
@@ -269,10 +269,10 @@ func (this *AbuDbTable) Replace(insert *map[string]interface{}) (int64, error) {
 			}
 		}
 		for i := 0; i < len(nofields); i++ {
-			delete(*insert, nofields[i])
+			delete(insert, nofields[i])
 		}
 	}
-	this.insert = insert
+	this.insert = &insert
 	sql, wv := this.get_replace_sql()
 	conn := this.dbconn
 	if conn == nil {
@@ -654,7 +654,7 @@ func (this *AbuDbTable) get_delete_sql() (string, []interface{}) {
 	}
 	return sql, wv
 }
-func (this *AbuDbTable) get_update_sql() (string, []interface{}) {
+func (this *AbuDbTable) get_update_sql() (string, *[]interface{}) {
 	sql := ""
 	ustr := ""
 	uv := []interface{}{}
@@ -709,7 +709,7 @@ func (this *AbuDbTable) get_update_sql() (string, []interface{}) {
 	} else {
 		sql = fmt.Sprintf("UPDATE %s SET%s  ", this.tablename, ustr)
 	}
-	return sql, uv
+	return sql, &uv
 }
 
 func (this *AbuDbTable) get_insert_sql() (string, *[]interface{}) {
