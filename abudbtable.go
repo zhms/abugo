@@ -29,7 +29,7 @@ type AbuDbTable struct {
 	pagekey   string
 	pageorder string
 	dicsql    string
-	dicwv     *[]interface{}
+	dicwv     []interface{}
 	fields    *map[string]int
 }
 
@@ -56,7 +56,7 @@ func (this *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 	} else if wheretype.Name() == "string" {
 		this.dicsql = where[0].(string)
 		for i := 1; i < len(where); i++ {
-			*this.dicwv = append(*this.dicwv, where[i])
+			this.dicwv = append(this.dicwv, where[i])
 		}
 	} else {
 		w := AbuDbWhere{}
@@ -329,7 +329,7 @@ func (this *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, or
 	}
 	if len(this.dicsql) > 0 {
 		wstr = this.dicsql
-		wv = *this.dicwv
+		wv = this.dicwv
 	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT COUNT(*) AS Total FROM %s where %s", this.tablename, wstr)
@@ -425,7 +425,7 @@ func (this *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, 
 	orderby = strings.ToLower(orderby)
 	if len(this.dicsql) > 0 {
 		wstr = this.dicsql
-		wv = *this.dicwv
+		wv = this.dicwv
 	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT COUNT(%s) AS Total FROM %s where %s", orderbyfield, this.tablename, wstr)
@@ -599,7 +599,7 @@ func (this *AbuDbTable) get_select_sql() (string, []interface{}) {
 	}
 	if len(this.dicsql) > 0 {
 		wstr = this.dicsql
-		wv = *this.dicwv
+		wv = this.dicwv
 	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s ", this.selectstr, this.tablename, this.join, wstr)
@@ -657,7 +657,7 @@ func (this *AbuDbTable) get_delete_sql() (string, []interface{}) {
 	}
 	if len(this.dicsql) > 0 {
 		wstr = this.dicsql
-		wv = *this.dicwv
+		wv = this.dicwv
 	}
 	if len(wstr) > 0 {
 		sql = fmt.Sprintf("DELETE FROM %s  WHERE %s ", this.tablename, wstr)
@@ -715,8 +715,8 @@ func (this *AbuDbTable) get_update_sql() (string, *[]interface{}) {
 	}
 	if len(this.dicsql) > 0 {
 		wstr = this.dicsql
-		for i := 0; i < len(*this.dicwv); i++ {
-			uv = append(uv, (*this.dicwv)[i])
+		for i := 0; i < len(this.dicwv); i++ {
+			uv = append(uv, (this.dicwv)[i])
 		}
 	}
 	if len(wstr) > 0 {
@@ -739,7 +739,7 @@ func (this *AbuDbTable) get_insert_sql() (string, *[]interface{}) {
 	}
 	if len(this.dicsql) > 0 {
 		istr = this.dicsql
-		iv = *this.dicwv
+		iv = this.dicwv
 	}
 	if len(istr) > 0 {
 		istr = strings.TrimRight(istr, ",")
@@ -761,7 +761,7 @@ func (this *AbuDbTable) get_replace_sql() (string, []interface{}) {
 	}
 	if len(this.dicsql) > 0 {
 		istr = this.dicsql
-		iv = *this.dicwv
+		iv = this.dicwv
 	}
 	if len(istr) > 0 {
 		istr = strings.TrimRight(istr, ",")
