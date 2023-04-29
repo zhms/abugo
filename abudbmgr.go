@@ -58,6 +58,10 @@ func (this *AbuDb) conn() *sql.DB {
 	return this.db.DB()
 }
 
+func (this *AbuDb) GetDbName() string {
+	return this.database
+}
+
 func (this *AbuDb) Query(query string, args ...any) (*[]map[string]interface{}, error) {
 	data, err := this.db.DB().Query(query, args...)
 	if err != nil {
