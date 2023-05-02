@@ -128,7 +128,7 @@ func (ctx *AbuHttpContent) RespOK(objects ...interface{}) {
 	resp.Code = 0
 	resp.Msg = "success"
 	if len(objects) > 0 {
-		ctx.Put("data", objects[0])
+		ctx.Put("", objects[0])
 	}
 	resp.Data = ctx.gin.Keys["REPONSE_DATA"]
 	if resp.Data == nil {
