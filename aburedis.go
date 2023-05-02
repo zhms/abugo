@@ -518,3 +518,12 @@ func (this *AbuRedis) GetCacheArray(key string, cb func() *[]interface{}) *[]int
 		return cb()
 	}
 }
+
+func (this *AbuRedis) GetCacheString(key string, cb func() string) string {
+	data := this.Get(key)
+	if data != nil {
+		return string(data.([]byte))
+	} else {
+		return cb()
+	}
+}
