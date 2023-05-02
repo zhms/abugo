@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -523,6 +524,26 @@ func (this *AbuRedis) GetCacheString(key string, cb func() string) string {
 	data := this.Get(key)
 	if data != nil {
 		return string(data.([]byte))
+	} else {
+		return cb()
+	}
+}
+
+func (this *AbuRedis) GetCacheInt(key string, cb func() int64) int64 {
+	data := this.Get(key)
+	if data != nil {
+		r, _ := strconv.ParseInt(string(data.([]byte)), 10, 64)
+		return r
+	} else {
+		return cb()
+	}
+}
+
+func (this *AbuRedis) GetCacheFloat(key string, cb func() float64) float64 {
+	data := this.Get(key)
+	if data != nil {
+		r, _ := strconv.ParseFloat(string(data.([]byte)), 32)
+		return r
 	} else {
 		return cb()
 	}
