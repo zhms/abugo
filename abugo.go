@@ -597,11 +597,11 @@ type DBError struct {
 }
 
 func GetDbError(data *map[string]interface{}) *DBError {
+	err := DBError{}
 	code, codeok := (*data)["errcode"]
 	if !codeok {
-		return nil
+		return &err
 	}
-	err := DBError{}
 	err.ErrCode = int(InterfaceToInt(code))
 	msg, msgok := (*data)["errmsg"]
 	if msgok {
