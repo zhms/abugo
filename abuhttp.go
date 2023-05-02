@@ -652,3 +652,7 @@ func (this *AbuHttp) WsDefaultMsgCallback(callback AbuWsDefaultMsgCallback) {
 func (this *AbuHttp) WsAddCloseCallback(callback AbuWsCallback) {
 	this.close_callback = callback
 }
+
+func (c *AbuHttpContent) Host() string {
+	return strings.Split(c.gin.Request.Host, ":")[0]
+}
