@@ -497,24 +497,24 @@ func (this *AbuRedis) ReleaseLock(key string) {
 	this.Del(key)
 }
 
-func (this *AbuRedis) GetCacheMap(key string, cb func(string) *map[string]interface{}) *map[string]interface{} {
+func (this *AbuRedis) GetCacheMap(key string, cb func() *map[string]interface{}) *map[string]interface{} {
 	data := this.Get(key)
 	if data != nil {
 		jdata := map[string]interface{}{}
 		json.Unmarshal(data.([]byte), &jdata)
 		return &jdata
 	} else {
-		return cb(key)
+		return cb()
 	}
 }
 
-func (this *AbuRedis) GetCacheArray(key string, cb func(string) *[]interface{}) *[]interface{} {
+func (this *AbuRedis) GetCacheArray(key string, cb func() *[]interface{}) *[]interface{} {
 	data := this.Get(key)
 	if data != nil {
 		jdata := []interface{}{}
 		json.Unmarshal(data.([]byte), &jdata)
 		return &jdata
 	} else {
-		return cb(key)
+		return cb()
 	}
 }
