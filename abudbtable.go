@@ -74,36 +74,36 @@ func (this *AbuDbTable) Where(where ...interface{}) *AbuDbTable {
 				tags := strings.Split(tag, ",")
 				if len(tags) == 2 {
 					if field.Type.Name() == "string" {
-						w.And(fname, tags[0], wherevalue.Field(i).String(), tags[1])
+						w.Add("and", fname, tags[0], wherevalue.Field(i).String(), tags[1])
 					} else if field.Type.Name() == "int" {
 						iv, _ := strconv.ParseInt(tags[1], 10, 64)
-						w.And(fname, tags[0], int(wherevalue.Field(i).Int()), int(iv))
+						w.Add("and", fname, tags[0], int(wherevalue.Field(i).Int()), int(iv))
 					} else if field.Type.Name() == "int32" {
 						iv, _ := strconv.ParseInt(tags[1], 10, 64)
-						w.And(fname, tags[0], int32(wherevalue.Field(i).Int()), int32(iv))
+						w.Add("and", fname, tags[0], int32(wherevalue.Field(i).Int()), int32(iv))
 					} else if field.Type.Name() == "int64" {
 						iv, _ := strconv.ParseInt(tags[1], 10, 64)
-						w.And(fname, tags[0], int64(wherevalue.Field(i).Int()), int64(iv))
+						w.Add("and", fname, tags[0], int64(wherevalue.Field(i).Int()), int64(iv))
 					} else if field.Type.Name() == "float32" {
 						iv, _ := strconv.ParseFloat(tags[1], 64)
-						w.And(fname, tags[0], float32(wherevalue.Field(i).Float()), float32(iv))
+						w.Add("and", fname, tags[0], float32(wherevalue.Field(i).Float()), float32(iv))
 					} else if field.Type.Name() == "float64" {
 						iv, _ := strconv.ParseFloat(tags[1], 64)
-						w.And(fname, tags[0], float64(wherevalue.Field(i).Float()), float64(iv))
+						w.Add("and", fname, tags[0], float64(wherevalue.Field(i).Float()), float64(iv))
 					}
 				} else if len(tags) == 1 {
 					if field.Type.Name() == "string" {
-						w.And(fname, tags[0], wherevalue.Field(i).String(), nil)
+						w.Add("and", fname, tags[0], wherevalue.Field(i).String(), nil)
 					} else if field.Type.Name() == "int" {
-						w.And(fname, tags[0], wherevalue.Field(i).Int(), nil)
+						w.Add("and", fname, tags[0], wherevalue.Field(i).Int(), nil)
 					} else if field.Type.Name() == "int32" {
-						w.And(fname, tags[0], int32(wherevalue.Field(i).Int()), nil)
+						w.Add("and", fname, tags[0], int32(wherevalue.Field(i).Int()), nil)
 					} else if field.Type.Name() == "int64" {
-						w.And(fname, tags[0], int64(wherevalue.Field(i).Int()), nil)
+						w.Add("and", fname, tags[0], int64(wherevalue.Field(i).Int()), nil)
 					} else if field.Type.Name() == "float32" {
-						w.And(fname, tags[0], float32(wherevalue.Field(i).Float()), nil)
+						w.Add("and", fname, tags[0], float32(wherevalue.Field(i).Float()), nil)
 					} else if field.Type.Name() == "float64" {
-						w.And(fname, tags[0], float64(wherevalue.Field(i).Float()), nil)
+						w.Add("and", fname, tags[0], float64(wherevalue.Field(i).Float()), nil)
 					}
 				}
 			}
