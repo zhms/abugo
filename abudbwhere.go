@@ -14,7 +14,7 @@ type AbuDbWhere struct {
 	length int
 }
 
-func (this *AbuDbWhere) Add(opt string, field string, operator string, val interface{}, invalidval interface{}) *AbuDbWhere {
+func (this *AbuDbWhere) add(opt string, field string, operator string, val interface{}, invalidval interface{}) *AbuDbWhere {
 	if this.Data == nil {
 		this.Data = make(map[string]interface{})
 	}
@@ -29,15 +29,15 @@ func (this *AbuDbWhere) Add(opt string, field string, operator string, val inter
 }
 
 func (this *AbuDbWhere) And(field string, operator string, val interface{}, invalidval interface{}) *AbuDbWhere {
-	return this.Add("and", field, operator, val, invalidval)
+	return this.add("and", field, operator, val, invalidval)
 }
 
 func (this *AbuDbWhere) Or(field string, operator string, val interface{}, invalidval interface{}) *AbuDbWhere {
-	return this.Add("or", field, operator, val, invalidval)
+	return this.add("or", field, operator, val, invalidval)
 }
 
 func (this *AbuDbWhere) In(field string, operator string, val interface{}, invalidval interface{}) *AbuDbWhere {
-	return this.Add("in", field, operator, val, invalidval)
+	return this.add("in", field, operator, val, invalidval)
 }
 
 func (this *AbuDbWhere) Sql() (string, []interface{}) {
