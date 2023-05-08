@@ -28,6 +28,18 @@ func (this *AbuDbWhere) Add(opt string, field string, operator string, val inter
 	return this
 }
 
+func (this *AbuDbWhere) And(field string, operator string, val interface{}, invalidval interface{}) *AbuDbWhere {
+	return this.Add("and", field, operator, val, invalidval)
+}
+
+func (this *AbuDbWhere) Or(field string, operator string, val interface{}, invalidval interface{}) *AbuDbWhere {
+	return this.Add("or", field, operator, val, invalidval)
+}
+
+func (this *AbuDbWhere) In(field string, operator string, val interface{}, invalidval interface{}) *AbuDbWhere {
+	return this.Add("in", field, operator, val, invalidval)
+}
+
 func (this *AbuDbWhere) Sql() (string, []interface{}) {
 	wstr := ""
 	wv := []interface{}{}

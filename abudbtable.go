@@ -321,8 +321,12 @@ func (this *AbuDbTable) PageData(Page int, PageSize int, orderbyfield string, or
 	})
 	for _, v := range order {
 		if v.Value != nil {
-			wstr += fmt.Sprintf(" %s %s ? ", v.Field, v.Opt)
-			wv = append(wv, v.Value)
+			if strings.ToLower(v.Opt) != "in" {
+				wstr += fmt.Sprintf(" %s %s ? ", v.Field, v.Opt)
+				wv = append(wv, v.Value)
+			} else {
+				wstr += fmt.Sprintf(" %v %s %v ", v.Field, v.Opt, v.Value)
+			}
 		} else {
 			wstr += v.Field
 		}
@@ -416,8 +420,12 @@ func (this *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, 
 	})
 	for _, v := range order {
 		if v.Value != nil {
-			wstr += fmt.Sprintf(" %s %s ? ", v.Field, v.Opt)
-			wv = append(wv, v.Value)
+			if strings.ToLower(v.Opt) != "in" {
+				wstr += fmt.Sprintf(" %s %s ? ", v.Field, v.Opt)
+				wv = append(wv, v.Value)
+			} else {
+				wstr += fmt.Sprintf(" %v %s %v ", v.Field, v.Opt, v.Value)
+			}
 		} else {
 			wstr += v.Field
 		}
@@ -591,8 +599,12 @@ func (this *AbuDbTable) get_select_sql() (string, []interface{}) {
 	})
 	for _, v := range order {
 		if v.Value != nil {
-			wstr += fmt.Sprintf(" %s %s ? ", v.Field, v.Opt)
-			wv = append(wv, v.Value)
+			if strings.ToLower(v.Opt) != "in" {
+				wstr += fmt.Sprintf(" %s %s ? ", v.Field, v.Opt)
+				wv = append(wv, v.Value)
+			} else {
+				wstr += fmt.Sprintf(" %v %s %v ", v.Field, v.Opt, v.Value)
+			}
 		} else {
 			wstr += v.Field
 		}
@@ -649,8 +661,12 @@ func (this *AbuDbTable) get_delete_sql() (string, []interface{}) {
 	})
 	for _, v := range order {
 		if v.Value != nil {
-			wstr += fmt.Sprintf(" %s %s ? ", v.Field, v.Opt)
-			wv = append(wv, v.Value)
+			if strings.ToLower(v.Opt) != "in" {
+				wstr += fmt.Sprintf(" %s %s ? ", v.Field, v.Opt)
+				wv = append(wv, v.Value)
+			} else {
+				wstr += fmt.Sprintf(" %v %s %v ", v.Field, v.Opt, v.Value)
+			}
 		} else {
 			wstr += v.Field
 		}
@@ -707,8 +723,12 @@ func (this *AbuDbTable) get_update_sql() (string, *[]interface{}) {
 	})
 	for _, v := range order {
 		if v.Value != nil {
-			wstr += fmt.Sprintf(" %s = ?", v.Field)
-			uv = append(uv, v.Value)
+			if strings.ToLower(v.Opt) != "in" {
+				wstr += fmt.Sprintf(" %s = ?", v.Field)
+				uv = append(uv, v.Value)
+			} else {
+				wstr += fmt.Sprintf(" %v %s %v ", v.Field, v.Opt, v.Value)
+			}
 		} else {
 			wstr += v.Field
 		}
