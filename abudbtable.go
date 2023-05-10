@@ -484,7 +484,11 @@ func (this *AbuDbTable) PageDataEx(Page int, PageSize int, orderbyfield string, 
 	if orderby == "desc" {
 		opt = "<="
 	}
-	wstr = fmt.Sprintf("%s %s ? and (%s)", orderbyfield, opt, wstr)
+	if len(wstr) > 0 {
+		wstr = fmt.Sprintf("%s %s ? and (%s)", orderbyfield, opt, wstr)
+	} else {
+		wstr = fmt.Sprintf("%s %s ?", orderbyfield, opt)
+	}
 	twv := []interface{}{}
 	twv = append(twv, minvalue)
 	for i := 0; i < len(wv); i++ {
