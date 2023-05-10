@@ -275,7 +275,7 @@ func (this *GameServer) SendMsgToUser(UserId int, msgid string, data interface{}
 }
 
 func (this *GameServer) SendMsgToAll(msgid string, data interface{}) {
-	this.conn_user.Range(func(key, value any) bool {
+	this.conn_user.Range(func(_, value any) bool {
 		v := value.(*ServerUserData)
 		this.http.WsSendMsg(v.Connection, msgid, data)
 		return true
