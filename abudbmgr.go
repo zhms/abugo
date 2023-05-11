@@ -115,7 +115,7 @@ func (this *AbuDb) CallProcedure(procname string, args ...interface{}) (*map[str
 		for i := range fields {
 			if scans[i] != nil {
 				typename := ct[i].DatabaseTypeName()
-				if typename == "INT" || typename == "BIGINT" || typename == "TINYINT" || typename == "UNSIGNED BIGINT" || typename == "UNSIGNED" {
+				if typename == "INT" || typename == "BIGINT" || typename == "TINYINT" || typename == "UNSIGNED BIGINT" || typename == "UNSIGNED" || typename == "UNSIGNED INT" {
 					if reflect.TypeOf(scans[i]).Name() == "" {
 						v, _ := strconv.ParseInt(string(scans[i].([]uint8)), 10, 64)
 						data[fields[i]] = v
@@ -171,7 +171,7 @@ func (this *AbuDb) getone(rows *sql.Rows) *map[string]interface{} {
 	for i := range fields {
 		if scans[i] != nil {
 			typename := ct[i].DatabaseTypeName()
-			if typename == "INT" || typename == "BIGINT" || typename == "TINYINT" || typename == "UNSIGNED BIGINT" || typename == "UNSIGNED" {
+			if typename == "INT" || typename == "BIGINT" || typename == "TINYINT" || typename == "UNSIGNED BIGINT" || typename == "UNSIGNED" || typename == "UNSIGNED INT" {
 				if reflect.TypeOf(scans[i]).Name() == "" {
 					v, _ := strconv.ParseInt(string(scans[i].([]uint8)), 10, 64)
 					data[fields[i]] = v
@@ -207,6 +207,6 @@ func (this *AbuDb) getone(rows *sql.Rows) *map[string]interface{} {
 	return &data
 }
 
-func (this *AbuDb) Begin() (*sql.Tx, error){
+func (this *AbuDb) Begin() (*sql.Tx, error) {
 	return this.conn().Begin()
 }
