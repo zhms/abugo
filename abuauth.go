@@ -11,8 +11,10 @@ func AuthInit(db *AbuDb, fullauth string) {
 	json.Unmarshal([]byte(fullauth), &jdata)
 	xitong := jdata["系统管理"].(map[string]interface{})
 	xitong["运营商管理"] = map[string]interface{}{"查:": 0, "增": 0, "删": 0, "改": 0}
-	xitongsezhi := xitong["系统设置"].(map[string]interface{})
-	xitongsezhi["删"] = 0
+	if xitong["系统设置"] != nil {
+		xitongsezhi := xitong["系统设置"].(map[string]interface{})
+		xitongsezhi["删"] = 0
+	}
 	jbytes, _ := json.Marshal(&jdata)
 	authstr := string(jbytes)
 	sql := "select SellerId from x_seller"
