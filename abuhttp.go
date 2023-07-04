@@ -2,7 +2,6 @@ package abugo
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
@@ -58,12 +57,16 @@ func abuhttpcors() gin.HandlerFunc {
 }
 
 func (this *AbuHttpContent) RequestData(obj interface{}) error {
-	json.Unmarshal([]byte(this.reqdata), &obj)
-	validator := val.New()
-	err := validator.Struct(obj)
+	err := json.Unmarshal([]byte(this.reqdata), &obj)
 	if err != nil {
 		this.RespErr(6, err.Error())
-		return errors.New("参数校验错误")
+		return err
+	}
+	validator := val.New()
+	err = validator.Struct(obj)
+	if err != nil {
+		this.RespErr(6, err.Error())
+		return err
 	}
 	return nil
 }
