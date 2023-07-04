@@ -203,7 +203,6 @@ func (this *AbuDb) getone(rows *sql.Rows) *map[string]interface{} {
 			data[fields[i]] = nil
 		}
 	}
-
 	return &data
 }
 

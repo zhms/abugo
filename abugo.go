@@ -600,9 +600,12 @@ func GetDbError(data *map[string]interface{}) *DBError {
 	err := DBError{}
 	code, codeok := (*data)["errcode"]
 	if !codeok {
-		return &err
+		return nil
 	}
 	err.ErrCode = int(InterfaceToInt(code))
+	if err.ErrCode == 0 {
+		return nil
+	}
 	msg, msgok := (*data)["errmsg"]
 	if msgok {
 		err.ErrMsg = InterfaceToString(msg)
